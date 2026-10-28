@@ -1,80 +1,116 @@
-import React, { useState } from 'react';
-import { View, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Bar, Btn, Card, Screen, T } from '../../components/ui';
-import { dateKey, remove } from '../../lib/db';
+import React from 'react';
+import { View } from 'react-native';
+import { Card, Screen, T } from '../../components/ui';
+import { RankBadge } from '../../components/RankBadge';
 import { useLoad } from '../../lib/hooks';
-import { entriesFor, getProfile, getWater, MEALS, setWater } from '../../lib/repo';
-import { C, GLASSES_ML } from '../../lib/theme';
+import { exerciseStats, fmtMin, muscleRanks, performance, player, weekActivity, Perf } from '../../lib/stats';
+import { TIER_COLOR } from '../../lib/rank';
+import { C } from '../../lib/theme';
 
-export default function Journal() {
-  const router = useRouter();
-  const [date, setDate] = useState(dateKey(new Date()));
-  const [data, reload] = useLoad(async () => ({
-    profile: await getProfile(), entries: await entriesFor(date), water: await getWater(date),
-  }), [date]);
+function Delta({ cur, prev, invert }: { cur: number; prev: number; invert?: boolean }) {
+  if (!prev && !cur) return <T size={12} dim>—</T>;
+  const pct = prev ? Math.round(((cur - prev) / prev) * 100) : 100;
+  const up = pct > 0, flat = pct === 0;
+  const good = flat ? null : invert ? !up : up;
+  return <T size={13} color={good === null ? C.dim : good ? C.green : C.red}>{flat ? '→' : up ? '↗' : '↘'} {Math.abs(pct)}%</T>;
+}
 
-  const shift = (d: number) => {
-    const [y, m, day] = date.split('-').map(Number);
-    setDate(dateKey(new Date(y, m - 1, day + d)));
-  };
-  if (!data || !data.profile) return <Screen><T>...</T></Screen>;
-  const { profile: p, entries, water } = data;
-  const sum = entries.reduce((a, e) => ({ kcal: a.kcal + e.kcal, p: a.p + e.protein, c: a.c + e.carbs, f: a.f + e.fat }), { kcal: 0, p: 0, c: 0, f: 0 });
-  const left = p.kcal - sum.kcal;
+export default function Dashboard() {
+  const [d] = useLoad(async () => {
+    const ex = await exerciseStats();
+    return {
+      ex, week: await weekActivity(), lvl: await player(), muscles: muscleRanks(ex),
+      cur: await performance(30), prev: await performance(30, 30),
+    };
+  });
+  if (!d) return <Screen><T>...</T></Screen>;
+  const top = [...d.ex].sort((a, b) => b.rank.index + b.rank.progress - (a.rank.index + a.rank.progress)).slice(0, 5);
+  const rows: [string, (p: Perf) => number, (n: number) => string][] = [
+    ['Séances', (p) => p.sessions, String],
+    ['Temps total', (p) => p.totalMin, fmtMin],
+    ['Temps moyen', (p) => p.avgMin, fmtMin],
+    ['Exercices différents', (p) => p.diffEx, String],
+    ['Exo / séance', (p) => p.exPerSession, String],
+    ['Volume moyen / séance', (p) => p.avgVolume, (n) => `${n} kg`],
+  ];
 
   return (
-    <Screen
-      footer={<Btn label="+ AJOUTER UN ALIMENT" onPress={() => router.push({ pathname: '/add-food', params: { meal: 'DEJEUNER', date } })} />}
-    >
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Btn size="sm" variant="ghost" label="<" onPress={() => shift(-1)} />
-        <T size={16}>{date}</T>
-        <Btn size="sm" variant="ghost" label=">" onPress={() => shift(1)} />
-      </View>
-
-      <Card accent={left < 0 ? C.red : C.gold}>
-        <T size={11} dim>KCAL CONSOMMEES</T>
-        <T size={56} color={left < 0 ? C.red : C.gold}>{Math.round(sum.kcal)}</T>
-        <T size={13}>/ {p.kcal} OBJECTIF · {left >= 0 ? `${Math.round(left)} RESTANTES` : `${Math.round(-left)} EN TROP`}</T>
-        <Bar label="KCAL" unit="" value={sum.kcal} max={p.kcal} color={C.gold} />
-      </Card>
+    <Screen>
+      <T size={26}>Dashboard</T>
 
       <Card>
-        <Bar label="PROTEINES" value={sum.p} max={p.protein} color={C.red} />
-        <Bar label="GLUCIDES" value={sum.c} max={p.carbs} color={C.orange} />
-        <Bar label="LIPIDES" value={sum.f} max={p.fat} color={C.gold} />
-      </Card>
-
-      {MEALS.map((meal) => {
-        const list = entries.filter((e) => e.meal === meal);
-        const kc = list.reduce((a, e) => a + e.kcal, 0);
-        return (
-          <Card key={meal}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <T size={16}>{meal}</T>
-              <T size={14} color={C.orange}>{Math.round(kc)} KCAL</T>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' }}>
+            <T size={11} color="#fff">NIV</T>
+            <T size={24} color="#fff">{d.lvl.level}</T>
+          </View>
+          <View style={{ flex: 1, gap: 6 }}>
+            <T size={16}>Niveau {d.lvl.level}</T>
+            <View style={{ height: 10, backgroundColor: C.card2, borderRadius: 6, overflow: 'hidden' }}>
+              <View style={{ width: `${Math.round(d.lvl.progress * 100)}%`, height: '100%', backgroundColor: C.gold, borderRadius: 6 }} />
             </View>
-            {list.map((e) => (
-              <Pressable key={e.id} onLongPress={async () => { await remove('food_entries', e.id); reload(); }} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <T size={12} style={{ flex: 1 }}>{e.name} · {Math.round(e.grams)}G</T>
-                <T size={12} dim>{Math.round(e.kcal)}</T>
-              </Pressable>
-            ))}
-            {list.length > 0 && <T size={10} dim>APPUI LONG = SUPPRIMER</T>}
-            <Btn size="sm" variant="ghost" label="+ AJOUTER" onPress={() => router.push({ pathname: '/add-food', params: { meal, date } })} />
-          </Card>
-        );
-      })}
-
-      <Card>
-        <T size={16}>EAU</T>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Btn size="sm" variant="ghost" label="-" onPress={async () => { await setWater(date, water.glasses - 1); reload(); }} />
-          <T size={32} color={C.gold} style={{ flex: 1, textAlign: 'center' }}>{water.glasses} <T size={12} dim>VERRES · {(water.glasses * GLASSES_ML) / 1000}L</T></T>
-          <Btn size="sm" variant="gold" label="+ VERRE" onPress={async () => { await setWater(date, water.glasses + 1); reload(); }} />
+            <T size={12} dim>{d.lvl.xp} / {d.lvl.next} XP</T>
+          </View>
         </View>
       </Card>
+
+      <Card>
+        <T size={18}>Activité</T>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          {d.week.map((w, i) => (
+            <View key={i} style={{ alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: w.done ? C.green : C.card2, borderWidth: w.today ? 2 : 0, borderColor: C.blue }}>
+                <T size={11} color={w.done ? '#000' : C.dim}>{w.done ? (w.mins ? `${w.mins}m` : '✓') : '✕'}</T>
+              </View>
+              <T size={12} dim>{w.label}</T>
+              <T size={12} color={w.today ? C.text : C.dim}>{String(w.day).padStart(2, '0')}</T>
+            </View>
+          ))}
+        </View>
+      </Card>
+
+      <Card>
+        <T size={18}>Performance (30 jours)</T>
+        {rows.map(([label, get, fmt]) => (
+          <View key={label} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.line }}>
+            <T size={14} dim style={{ flex: 1 }}>{label}</T>
+            <T size={16} style={{ flex: 1 }}>{fmt(get(d.cur))}</T>
+            <View style={{ alignItems: 'flex-end', minWidth: 70 }}>
+              <Delta cur={get(d.cur)} prev={get(d.prev)} />
+              <T size={11} dim>({fmt(get(d.prev))})</T>
+            </View>
+          </View>
+        ))}
+      </Card>
+
+      <Card>
+        <T size={18}>Rang par muscle</T>
+        {d.muscles.length === 0 && <T size={13} dim>Fais ta première séance pour débloquer tes rangs.</T>}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+          {d.muscles.map((m) => (
+            <View key={m.muscle} style={{ width: '31%', alignItems: 'center', gap: 4, backgroundColor: C.card2, borderRadius: 14, padding: 10 }}>
+              <RankBadge tier={m.tier} size={40} />
+              <T size={11} dim>{m.muscle}</T>
+              <T size={12} color={TIER_COLOR[m.tier]}>{m.tier}</T>
+            </View>
+          ))}
+        </View>
+      </Card>
+
+      {top.length > 0 && (
+        <Card>
+          <T size={18}>Meilleurs rangs</T>
+          {top.map((e) => (
+            <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <RankBadge tier={e.rank.tier} size={36} />
+              <View style={{ flex: 1 }}>
+                <T size={14}>{e.name}</T>
+                <T size={12} color={TIER_COLOR[e.rank.tier]}>{e.rank.tier} · 1RM {e.e1rm} kg</T>
+              </View>
+            </View>
+          ))}
+        </Card>
+      )}
     </Screen>
   );
 }

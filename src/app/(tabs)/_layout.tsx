@@ -8,15 +8,16 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: C.bg },
-        tabBarStyle: { backgroundColor: C.bg, borderTopWidth: 0, height: 66, boxShadow: `0px -6px 14px ${C.lo}` },
-        tabBarActiveTintColor: C.gold,
+        tabBarStyle: { backgroundColor: C.card, borderTopWidth: 0, height: 62 },
+        tabBarActiveTintColor: C.blue,
         tabBarInactiveTintColor: C.dim,
-        tabBarLabelStyle: { fontWeight: '700', fontSize: 12, letterSpacing: 1 },
+        tabBarLabelStyle: { fontWeight: '700', fontSize: 11, letterSpacing: 0.8 },
         tabBarIconStyle: { display: 'none' },
         tabBarLabelPosition: 'beside-icon',
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'FOOD' }} />
+      <Tabs.Screen name="index" options={{ title: 'DASH' }} />
+      <Tabs.Screen name="food" options={{ title: 'FOOD' }} />
       <Tabs.Screen name="train" options={{ title: 'TRAIN' }} />
       <Tabs.Screen name="stats" options={{ title: 'STATS' }} />
       <Tabs.Screen name="profile" options={{ title: 'PROFIL' }} />

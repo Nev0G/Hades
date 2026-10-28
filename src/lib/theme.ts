@@ -1,32 +1,31 @@
 import { ViewStyle } from 'react-native';
 
-// Néomorphisme sombre : une seule teinte de surface, relief créé par deux ombres (claire haut-gauche, sombre bas-droite).
+// Thème sombre plat (cartes #1C1C1E sur noir, accent bleu) inspiré des apps de suivi de séances.
 export const C = {
-  bg: '#22252C',
-  card: '#22252C',
-  card2: '#22252C',
-  line: '#3A3F4B',
-  text: '#ECEEF4',
-  dim: '#8D93A3',
-  red: '#FF5A5F',
-  orange: '#FF9248',
-  gold: '#FFC857',
-  ok: '#FFC857',
-  hi: '#2D313A',
-  lo: '#16181D',
+  bg: '#000000',
+  card: '#1C1C1E',
+  card2: '#2C2C2E',
+  line: '#38383A',
+  text: '#FFFFFF',
+  dim: '#9A9AA0',
+  blue: '#2F7BF6',
+  green: '#34C759',
+  doneBg: '#1F5F2A',
+  red: '#FF453A',
+  orange: '#FF9F0A',
+  gold: '#FFD60A',
+  ok: '#34C759',
+  hi: '#2C2C2E',
+  lo: '#000000',
 };
 export const MONO = 'JetBrainsMono_800ExtraBold';
 export const MONO_REG = 'JetBrainsMono_500Medium';
-// Police système (aucune dépendance de police supplémentaire) pour les textes courants.
 export const SANS = undefined;
 export const SANS_REG = undefined;
 export const B = 0;
 export const GLASSES_ML = 250;
 
-const sh = (d: number) => `${d}px ${d}px ${d * 2}px ${C.lo}, -${d}px -${d}px ${d * 2}px ${C.hi}`;
-const shIn = (d: number) => `inset ${d}px ${d}px ${d * 1.5}px ${C.lo}, inset -${d}px -${d}px ${d * 1.5}px ${C.hi}`;
-
-/** Relief sortant (cartes, boutons). */
-export const raised = (d = 6, radius = 20): ViewStyle => ({ backgroundColor: C.bg, borderRadius: radius, boxShadow: sh(d) });
-/** Relief rentrant (champs, jauges, état pressé / sélectionné). */
-export const inset = (d = 4, radius = 20): ViewStyle => ({ backgroundColor: C.bg, borderRadius: radius, boxShadow: shIn(d) });
+/** Surface standard (carte, bouton neutre). */
+export const raised = (_d = 6, radius = 16): ViewStyle => ({ backgroundColor: C.card, borderRadius: radius });
+/** Surface en retrait (champ, piste de jauge, sélection). */
+export const inset = (_d = 4, radius = 16): ViewStyle => ({ backgroundColor: C.card2, borderRadius: radius });

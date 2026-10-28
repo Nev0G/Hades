@@ -51,3 +51,33 @@ test('pavé numérique', () => {
   expect(addTo('100', 2.5)).toBe('102.5');
   expect(toNumber('')).toBe(0);
 });
+
+import { rankFor, standardFor, levelFromXp, setXp, TIERS } from '../lib/rank';
+
+test('rang développé couché : 100 kg à 80 kg de poids de corps', () => {
+  const std = standardFor('DEVELOPPE COUCHE', 'BARRE', true);
+  const r = rankFor(std, 100, 80, 'M'); // ratio 1.25 => PLATINUM
+  expect(r.tier).toBe('PLATINUM');
+  expect(r.nextKg).toBe(120);
+  expect(rankFor(std, 20, 80, 'M').tier).toBe('WOOD');
+  expect(rankFor(std, 400, 80, 'M').tier).toBe('OLYMPIAN');
+  expect(rankFor(std, 400, 80, 'M').progress).toBe(1);
+});
+
+test('rang femme plus accessible, poids de corps, progression', () => {
+  const std = standardFor('DEVELOPPE COUCHE', 'BARRE', true);
+  expect(TIERS.indexOf(rankFor(std, 60, 60, 'F').tier)).toBeGreaterThan(TIERS.indexOf(rankFor(std, 60, 60, 'M').tier));
+  const bw = standardFor('TRACTIONS', 'POIDS DU CORPS', true);
+  expect(bw.bodyweight).toBe(true);
+  expect(rankFor(bw, 80 * 1.4, 80, 'M').tier).toBe('PLATINUM');
+  expect(standardFor('LEG EXTENSION', 'MACHINE', false).thresholds[1]).toBeLessThan(0.2);
+});
+
+test('xp et niveau', () => {
+  expect(setXp(100, 5)).toBe(20);
+  expect(levelFromXp(0).level).toBe(1);
+  expect(levelFromXp(60).level).toBe(2);
+  const l = levelFromXp(100);
+  expect(l.progress).toBeGreaterThan(0);
+  expect(l.progress).toBeLessThan(1);
+});

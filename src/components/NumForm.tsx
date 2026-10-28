@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
-import { C, inset, raised } from '../lib/theme';
+import { C } from '../lib/theme';
 import { NumPad } from './NumPad';
 import { T } from './ui';
 
@@ -16,10 +16,10 @@ export function NumForm({ fields, values, onChange }: { fields: NumFieldDef[]; v
           <Pressable
             key={f.key}
             onPress={() => setActive(f.key)}
-            style={[{ width: '48%', padding: 12 }, f.key === active ? inset(4, 16) : raised(5, 16)]}
+            style={{ width: '48%', padding: 12, borderRadius: 14, backgroundColor: C.card, borderWidth: 2, borderColor: f.key === active ? C.blue : 'transparent' }}
           >
             <T size={10} dim>{f.label}</T>
-            <T size={22} color={f.key === active ? C.gold : C.text}>{values[f.key] || '0'}{f.unit ? ` ${f.unit}` : ''}</T>
+            <T size={22} color={f.key === active ? C.blue : C.text}>{values[f.key] || '0'}{f.unit ? ` ${f.unit}` : ''}</T>
           </Pressable>
         ))}
       </View>

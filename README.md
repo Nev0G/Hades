@@ -20,6 +20,12 @@ npm run typecheck
 
 Sans configuration : mode local (données sur l'appareil, SSO indisponible).
 
+## Gamification
+
+- Rang par exercice (Wood → Olympian) selon le 1RM estimé rapporté au poids de corps (`src/lib/rank.ts`), barème différent pour les femmes.
+- Rang par groupe musculaire, niveau joueur et XP (chaque série validée rapporte de l'XP).
+- Pendant une séance : toast « RANK UP » et « Nouveau record », résumé de fin avec XP gagnés.
+
 ## Architecture
 
 - `src/lib/db.ts` : SQLite, écriture locale instantanée + file `outbox` ; `sync.ts` l'envoie dès que le réseau revient.
