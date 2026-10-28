@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "HADES",
+    "slug": "hades",
+    "scheme": "hades",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#000000",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.hades.tracker",
+      "infoPlist": {
+        "NSCameraUsageDescription": "SCAN DES CODES-BARRES ET PHOTOS DE PROGRESSION",
+        "NSPhotoLibraryUsageDescription": "PHOTOS DE PROGRESSION"
+      }
+    },
+    "android": {
+      "package": "app.hades.tracker",
+      "adaptiveIcon": {
+        "backgroundColor": "#000000",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "CAMERA",
+        "VIBRATE",
+        "WAKE_LOCK",
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "SCAN DES CODES-BARRES ET PHOTOS DE PROGRESSION"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PHOTOS DE PROGRESSION"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#FF1E1E"
+        }
+      ],
+      "expo-web-browser"
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
