@@ -1,6 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import { kvGet, kvSet } from './db';
 
 const URL_ = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -9,17 +10,26 @@ export const cloudEnabled = !!(URL_ && KEY);
 export type Session = { token: string; email: string; local?: boolean };
 const SK = 'hades.session';
 
+// SecureStore peut être indisponible (web, simulateur sans keychain) : repli sur la base locale.
 export async function getSession(): Promise<Session | null> {
   try {
     const raw = await SecureStore.getItemAsync(SK);
+    if (raw) return JSON.parse(raw) as Session;
+  } catch { /* repli */ }
+  try {
+    const raw = await kvGet(SK);
     return raw ? (JSON.parse(raw) as Session) : null;
   } catch {
     return null;
   }
 }
 async function setSession(s: Session | null) {
-  if (s) await SecureStore.setItemAsync(SK, JSON.stringify(s));
-  else await SecureStore.deleteItemAsync(SK);
+  const raw = s ? JSON.stringify(s) : '';
+  try {
+    if (s) await SecureStore.setItemAsync(SK, raw);
+    else await SecureStore.deleteItemAsync(SK);
+  } catch { /* repli ci-dessous */ }
+  await kvSet(SK, raw);
 }
 
 async function gotrue(path: string, body: unknown) {

@@ -57,7 +57,7 @@ export default function RunSession() {
     if (!item || !sessionId) return;
     lastSets(item.exercise_id, sessionId).then((p) => {
       setPrev(p);
-      const ref = p[Math.min(mine.length, p.length - 1)];
+      const ref = p.length ? p[Math.min(mine.length, p.length - 1)] : mine[mine.length - 1];
       if (ref) { setWeight(String(ref.weight)); setReps(String(ref.reps)); }
       else { setWeight(''); setReps(''); }
     });
