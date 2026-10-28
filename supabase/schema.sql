@@ -9,7 +9,7 @@ end $$;
 -- NB : les colonnes métier sont ajoutées ci-dessous (identiques aux colonnes SQLite).
 alter table profile add column if not exists sex text, add column if not exists age int, add column if not exists height_cm real, add column if not exists weight_kg real,
   add column if not exists goal text, add column if not exists activity text, add column if not exists tdee int, add column if not exists kcal int,
-  add column if not exists protein int, add column if not exists carbs int, add column if not exists fat int, add column if not exists keep_awake int;
+  add column if not exists protein int, add column if not exists carbs int, add column if not exists fat int, add column if not exists keep_awake int, add column if not exists username text;
 alter table foods add column if not exists name text, add column if not exists brand text, add column if not exists barcode text, add column if not exists kcal real,
   add column if not exists protein real, add column if not exists carbs real, add column if not exists fat real, add column if not exists serving_g real, add column if not exists custom int;
 alter table food_entries add column if not exists date text, add column if not exists meal text, add column if not exists name text, add column if not exists grams real,

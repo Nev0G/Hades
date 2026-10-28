@@ -1,6 +1,7 @@
 import { all, dateKey } from './db';
 import { getProfile } from './repo';
-import { effectiveE1rm, levelFromXp, rankFor, RankInfo, setXp, standardFor, TIERS } from './rank';
+import { effectiveE1rm, levelFromXp, muscleScore, overallScore, rankFor, RankInfo, setXp, standardFor, Tier, tierOfScore } from './rank';
+import { MUSCLES } from './seed';
 import { Sex } from './nutrition';
 
 export type ExStat = {
@@ -43,14 +44,17 @@ export async function exerciseStats(): Promise<ExStat[]> {
   });
 }
 
-/** Rang par groupe musculaire = moyenne des rangs de ses exercices (meilleurs en premier). */
-export function muscleRanks(stats: ExStat[]) {
-  const by = new Map<string, number[]>();
-  for (const s of stats) by.set(s.muscle, [...(by.get(s.muscle) ?? []), s.rank.index + s.rank.progress]);
-  return [...by.entries()].map(([muscle, v]) => {
-    const score = v.sort((a, b) => b - a).slice(0, 3).reduce((a, b) => a + b, 0) / Math.min(3, v.length);
-    return { muscle, tier: TIERS[Math.min(TIERS.length - 1, Math.floor(score))], score };
-  }).sort((a, b) => b.score - a.score);
+export type MuscleRank = { muscle: string; score: number | null; tier: Tier | null; progress: number; exercises: number };
+
+/** Rang de chacun des groupes musculaires (null = jamais travaillé) + rang global. */
+export function muscleRanks(stats: ExStat[]): { muscles: MuscleRank[]; overall: { score: number; tier: Tier; progress: number } } {
+  const muscles = MUSCLES.map((muscle) => {
+    const list = stats.filter((s) => s.muscle === muscle);
+    const score = muscleScore(list.map((s) => s.rank.index + s.rank.progress));
+    return { muscle, score, tier: score === null ? null : tierOfScore(score), progress: score === null ? 0 : score - Math.floor(score), exercises: list.length };
+  });
+  const o = overallScore(muscles.map((m) => m.score));
+  return { muscles, overall: { score: o, tier: tierOfScore(o), progress: o - Math.floor(o) } };
 }
 
 export async function player() {
@@ -101,3 +105,27 @@ export async function performance(days: number, offset = 0): Promise<Perf> {
 }
 
 export const fmtMin = (m: number) => (m >= 60 ? `${Math.floor(m / 60)}h ${String(m % 60).padStart(2, '0')}min` : `${m}min`);
+
+export type Metric = 'xp' | 'volume' | 'sessions';
+
+/** Score local d'un défi sur la fenêtre [start, end] (ms). */
+export async function challengeScore(metric: Metric, start: number, end: number): Promise<number> {
+  const rows = (await setRows()).filter((r) => r.done_at >= start && r.done_at <= end);
+  if (metric === 'sessions') {
+    const ss = (await sessions()).filter((s) => s.started_at >= start && s.started_at <= end);
+    return ss.length;
+  }
+  if (metric === 'volume') return Math.round(rows.reduce((a, r) => a + r.weight * r.reps, 0));
+  return rows.reduce((a, r) => a + setXp(r.weight, r.reps), 0);
+}
+
+/** Résumé public envoyé au classement. */
+export async function publicSummary() {
+  const ex = await exerciseStats();
+  const mr = muscleRanks(ex);
+  const lvl = await player();
+  const week = await challengeScore('xp', Date.now() - 7 * 86400000, Date.now());
+  const muscle_ranks: Record<string, number> = {};
+  for (const m of mr.muscles) if (m.tier) muscle_ranks[m.muscle] = Math.round((m.score ?? 0) * 100) / 100;
+  return { xp: lvl.xp, level: lvl.level, week_xp: week, rank_index: Math.floor(mr.overall.score), rank_score: Math.round(mr.overall.score * 100) / 100, muscle_ranks };
+}

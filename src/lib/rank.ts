@@ -68,3 +68,15 @@ export function levelFromXp(xp: number) {
   const next = 60 * level ** 2;
   return { level, xp, base, next, progress: (xp - base) / (next - base) };
 }
+
+// ---- Rang par muscle (façon Liftoff) ----
+/** Score d'un muscle = moyenne entre son meilleur exercice et la moyenne de ses 3 meilleurs (index + progression). */
+export function muscleScore(exerciseScores: number[]): number | null {
+  if (!exerciseScores.length) return null;
+  const s = [...exerciseScores].sort((a, b) => b - a);
+  const top = s.slice(0, 3);
+  return (s[0] + top.reduce((a, b) => a + b, 0) / top.length) / 2;
+}
+export const tierOfScore = (score: number): Tier => TIERS[Math.min(TIERS.length - 1, Math.max(0, Math.floor(score)))];
+/** Rang global = moyenne de tous les muscles (un muscle jamais travaillé compte 0). */
+export const overallScore = (scores: (number | null)[]) => (scores.length ? scores.reduce<number>((a, b) => a + (b ?? 0), 0) / scores.length : 0);

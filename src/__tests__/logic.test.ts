@@ -81,3 +81,33 @@ test('xp et niveau', () => {
   expect(l.progress).toBeGreaterThan(0);
   expect(l.progress).toBeLessThan(1);
 });
+
+import { muscleScore, tierOfScore, overallScore } from '../lib/rank';
+
+test('rang par muscle', () => {
+  expect(muscleScore([])).toBeNull();
+  expect(muscleScore([3.5])).toBe(3.5);
+  // meilleur 5, top3 = (5+3+1)/3=3 => (5+3)/2 = 4
+  expect(muscleScore([5, 3, 1, 0])).toBe(4);
+  expect(tierOfScore(4.2)).toBe('PLATINUM');
+  expect(tierOfScore(99)).toBe('OLYMPIAN');
+  expect(overallScore([4, null, 2, null])).toBe(1.5);
+});
+
+import { isEmail, isUsername, normalizeUsername, passwordStrength, validateSignup } from '../lib/validate';
+
+test('validation inscription', () => {
+  expect(isEmail('a@b.co')).toBe(true);
+  expect(isEmail('a@b')).toBe(false);
+  expect(isEmail('a b@c.fr')).toBe(false);
+  expect(isUsername('iron_man')).toBe(true);
+  expect(isUsername('ab')).toBe(false);
+  expect(isUsername('Iron Man')).toBe(false);
+  expect(normalizeUsername('  Iron Man ')).toBe('iron_man');
+  expect(passwordStrength('abc').score).toBe(0);
+  expect(passwordStrength('abcdefgh').score).toBe(1);
+  expect(passwordStrength('Abcdefgh12!x').score).toBe(4);
+  const ok = { username: 'iron_man', email: 'a@b.co', password: 'secret123', confirm: 'secret123', consent: true };
+  expect(validateSignup(ok)).toEqual({});
+  expect(Object.keys(validateSignup({ ...ok, confirm: 'x', consent: false })).sort()).toEqual(['confirm', 'consent']);
+});

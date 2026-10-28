@@ -1,9 +1,9 @@
-import { all, first, save, today } from './db';
+import { all, first, kvGet, remove, save, today, uid } from './db';
 import { computeTargets, Activity, Goal, Sex } from './nutrition';
 
 export type Profile = {
   id: string; sex: Sex; age: number; height_cm: number; weight_kg: number; goal: Goal; activity: Activity;
-  tdee: number; kcal: number; protein: number; carbs: number; fat: number; keep_awake: number;
+  tdee: number; kcal: number; protein: number; carbs: number; fat: number; keep_awake: number; username?: string | null;
 };
 export const MEALS = ['PETIT-DEJEUNER', 'DEJEUNER', 'DINER', 'COLLATIONS'] as const;
 export type Meal = (typeof MEALS)[number];
@@ -13,7 +13,11 @@ export const getProfile = () => first<Profile>('SELECT * FROM profile WHERE dele
 export async function saveProfile(p: { sex: Sex; age: number; height_cm: number; weight_kg: number; goal: Goal; activity: Activity }, keepAwake = 1) {
   const t = computeTargets({ sex: p.sex, age: p.age, heightCm: p.height_cm, weightKg: p.weight_kg, goal: p.goal, activity: p.activity });
   const existing = await getProfile();
-  await save('profile', { id: existing?.id ?? 'me', ...p, tdee: t.tdee, kcal: t.kcal, protein: t.protein, carbs: t.carbs, fat: t.fat, keep_awake: existing?.keep_awake ?? keepAwake });
+  // L'ancien id fixe 'me' entrerait en collision entre utilisateurs côté serveur : on le remplace par un uuid.
+  const id = existing && existing.id !== 'me' ? existing.id : uid();
+  if (existing?.id === 'me') await remove('profile', 'me');
+  const username = (await kvGet('pending_username')) ?? existing?.username ?? null;
+  await save('profile', { id, username, ...p, tdee: t.tdee, kcal: t.kcal, protein: t.protein, carbs: t.carbs, fat: t.fat, keep_awake: existing?.keep_awake ?? keepAwake });
   await logWeight(p.weight_kg);
 }
 
@@ -50,3 +54,10 @@ export async function lastSets(exerciseId: string, excludeSession?: string): Pro
   if (!last) return [];
   return all<SetRow>('SELECT * FROM sets WHERE exercise_id=? AND session_id=? AND deleted=0 ORDER BY idx', [exerciseId, last.session_id]);
 }
+
+/** Aliments récemment consommés, complétés par les aliments de base. */
+export const recentFoods = () =>
+  all<Food>(
+    `SELECT * FROM foods WHERE deleted=0 ORDER BY
+       CASE WHEN name IN (SELECT name FROM food_entries WHERE deleted=0 ORDER BY updated_at DESC LIMIT 30) THEN 0 ELSE 1 END,
+       custom DESC, name LIMIT 30`);

@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Card, Screen, T } from '../../components/ui';
 import { RankBadge } from '../../components/RankBadge';
+import { BodyRanks } from '../../components/BodyRanks';
 import { useLoad } from '../../lib/hooks';
 import { exerciseStats, fmtMin, muscleRanks, performance, player, weekActivity, Perf } from '../../lib/stats';
 import { TIER_COLOR } from '../../lib/rank';
@@ -84,17 +85,35 @@ export default function Dashboard() {
       </Card>
 
       <Card>
-        <T size={18}>Rang par muscle</T>
-        {d.muscles.length === 0 && <T size={13} dim>Fais ta première séance pour débloquer tes rangs.</T>}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {d.muscles.map((m) => (
-            <View key={m.muscle} style={{ width: '31%', alignItems: 'center', gap: 4, backgroundColor: C.card2, borderRadius: 14, padding: 10 }}>
-              <RankBadge tier={m.tier} size={40} />
-              <T size={11} dim>{m.muscle}</T>
-              <T size={12} color={TIER_COLOR[m.tier]}>{m.tier}</T>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <RankBadge tier={d.muscles.overall.tier} size={64} />
+          <View style={{ flex: 1, gap: 6 }}>
+            <T size={12} dim>Rang global</T>
+            <T size={22} color={TIER_COLOR[d.muscles.overall.tier]}>{d.muscles.overall.tier}</T>
+            <View style={{ height: 8, backgroundColor: C.card2, borderRadius: 4, overflow: 'hidden' }}>
+              <View style={{ width: `${Math.round(d.muscles.overall.progress * 100)}%`, height: '100%', backgroundColor: TIER_COLOR[d.muscles.overall.tier] }} />
             </View>
-          ))}
+          </View>
         </View>
+        <BodyRanks muscles={d.muscles.muscles} width={140} />
+      </Card>
+
+      <Card>
+        <T size={18}>Rang par muscle</T>
+        {d.muscles.muscles.map((m) => (
+          <View key={m.muscle} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 4 }}>
+            {m.tier ? <RankBadge tier={m.tier} size={34} /> : <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: C.card2 }} />}
+            <View style={{ flex: 1, gap: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <T size={14}>{m.muscle}</T>
+                <T size={13} color={m.tier ? TIER_COLOR[m.tier] : C.dim}>{m.tier ?? 'Non classé'}</T>
+              </View>
+              <View style={{ height: 6, backgroundColor: C.card2, borderRadius: 3, overflow: 'hidden' }}>
+                <View style={{ width: `${Math.round(m.progress * 100)}%`, height: '100%', backgroundColor: m.tier ? TIER_COLOR[m.tier] : C.card2 }} />
+              </View>
+            </View>
+          </View>
+        ))}
       </Card>
 
       {top.length > 0 && (

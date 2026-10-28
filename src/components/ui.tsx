@@ -6,7 +6,8 @@ import { C, SANS, MONO } from '../lib/theme';
 
 const KEEP: Record<string, string> = { tdee: 'TDEE', '1rm': '1RM', ok: 'OK', hades: 'HADES', ex: 'Ex', pr: 'PR', xp: 'XP', rm: 'RM' };
 function soften(v: unknown, size: number): unknown {
-  if (typeof v !== 'string' || size <= 12) return v;
+  // Seuls les libellés entièrement en majuscules sont adoucis ; les phrases rédigées restent telles quelles.
+  if (typeof v !== 'string' || size <= 12 || v !== v.toUpperCase()) return v;
   const w = v.length <= 2 ? v : v.toLowerCase().replace(/[a-zà-ÿ0-9']+/g, (m) => KEEP[m] ?? m);
   return v.length <= 2 ? v : w.charAt(0).toUpperCase() + w.slice(1);
 }
@@ -61,11 +62,11 @@ export function Btn({
   );
 }
 
-export function Bar({ value, max, color = C.blue, label, unit = 'g' }: { value: number; max: number; color?: string; label: string; unit?: string }) {
+export function Bar({ value, max, color = C.blue, label, unit = 'g', stacked }: { value: number; max: number; color?: string; label: string; unit?: string; stacked?: boolean }) {
   const pct = max > 0 ? Math.min(1, value / max) : 0;
   return (
     <View style={{ gap: 6 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+      <View style={stacked ? { gap: 2 } : { flexDirection: 'row', justifyContent: 'space-between' }}>
         <T size={13}>{label}</T>
         <T size={13} dim>{Math.round(value)} / {Math.round(max)} {unit}</T>
       </View>
@@ -76,19 +77,25 @@ export function Bar({ value, max, color = C.blue, label, unit = 'g' }: { value: 
   );
 }
 
-export function Field({ label, value, onChangeText, keyboardType, placeholder }: { label: string; value: string; onChangeText: (v: string) => void; keyboardType?: 'default' | 'email-address' | 'numeric'; placeholder?: string }) {
+export function Field({ label, value, onChangeText, keyboardType, placeholder, secure, error, right }: { label: string; value: string; onChangeText: (v: string) => void; keyboardType?: 'default' | 'email-address' | 'numeric'; placeholder?: string; secure?: boolean; error?: string; right?: React.ReactNode }) {
   return (
     <View style={{ gap: 6 }}>
       <T size={12} dim>{label}</T>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        placeholder={placeholder}
-        placeholderTextColor={C.dim}
-        autoCapitalize="none"
-        style={s.input}
-      />
+      <View style={{ justifyContent: 'center' }}>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          keyboardType={keyboardType}
+          placeholder={placeholder}
+          placeholderTextColor={C.dim}
+          autoCapitalize="none"
+          autoCorrect={false}
+          secureTextEntry={secure}
+          style={[s.input, error ? { borderWidth: 1.5, borderColor: C.red } : null, right ? { paddingRight: 64 } : null]}
+        />
+        {right ? <View style={{ position: 'absolute', right: 12 }}>{right}</View> : null}
+      </View>
+      {error ? <T size={12} color={C.red}>{error}</T> : null}
     </View>
   );
 }

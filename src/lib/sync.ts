@@ -1,5 +1,5 @@
 import { getDb } from './db';
-import { getSession, cloudEnabled, supabase } from './auth';
+import { getSession, getValidToken, cloudEnabled, supabase } from './auth';
 
 let running = false;
 
@@ -9,7 +9,8 @@ export async function syncNow(): Promise<{ sent: number; pending: number }> {
   const pendingCount = async () => (await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) n FROM outbox'))?.n ?? 0;
   if (running || !cloudEnabled) return { sent: 0, pending: await pendingCount() };
   const s = await getSession();
-  if (!s || s.local || !s.token) return { sent: 0, pending: await pendingCount() };
+  const token = await getValidToken();
+  if (!s || s.local || !token) return { sent: 0, pending: await pendingCount() };
   running = true;
   let sent = 0;
   try {
@@ -21,7 +22,7 @@ export async function syncNow(): Promise<{ sent: number; pending: number }> {
       for (const b of batch) {
         const p = JSON.parse(b.payload);
         if (b.tbl === 'photos' && typeof p.uri === 'string' && !p.uri.startsWith('http')) {
-          const up = await uploadPhoto(p.uri, p.id, s.token);
+          const up = await uploadPhoto(p.uri, p.id, token);
           if (up) { p.uri = up; }
         }
         if (!byTable.has(b.tbl)) byTable.set(b.tbl, new Map());
@@ -32,7 +33,7 @@ export async function syncNow(): Promise<{ sent: number; pending: number }> {
           method: 'POST',
           headers: {
             apikey: supabase.key!,
-            Authorization: `Bearer ${s.token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
             Prefer: 'resolution=merge-duplicates,return=minimal',
           },

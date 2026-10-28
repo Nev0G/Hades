@@ -12,18 +12,27 @@ npm test              # logique pure : TDEE, macros, 1RM, pavé numérique
 npm run typecheck
 ```
 
-## Backend (optionnel)
+## Backend Supabase (synchro + social)
 
-1. Créer un projet Supabase, exécuter `supabase/schema.sql` (tables + RLS par utilisateur).
-2. Définir `EXPO_PUBLIC_SUPABASE_URL` et `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
-3. Activer les providers Google / Apple dans Supabase et ajouter l'URL de redirection `hades://auth`.
+1. Crée un projet sur supabase.com.
+2. Dans *SQL Editor*, exécute **dans cet ordre** `supabase/schema.sql` (données personnelles + RLS + bucket photos) puis `supabase/social.sql` (profils publics, amis, défis).
+3. Copie `.env.example` en `.env` et renseigne l'URL et la clé *anon* (Settings > API), puis relance `npx expo start --clear`.
+4. Auth > Providers : active Google / Apple si besoin, redirection `hades://auth`. Auth > Email : décide si la confirmation d'email est obligatoire (l'app gère les deux cas).
 
-Sans configuration : mode local (données sur l'appareil, SSO indisponible).
+Sans configuration : mode local (données sur l'appareil, pas de social).
+
+**Tester les règles d'accès (RLS)** sur un Postgres local jetable : `PGHOST=… PGUSER=… ./supabase/run_tests.sh` (affiche `RLS_OK`).
+Les scores du classement et des défis sont calculés par l'app (mode « confiance ») : les données d'entraînement détaillées restent privées.
+
+## Exercices
+
+120 exercices fournis hors-ligne + import de ~900 exercices depuis l'API ouverte [wger](https://wger.de) (Train > Bibliothèque > Importer). Recherche d'aliments : base locale + Open Food Facts.
 
 ## Gamification
 
 - Rang par exercice (Wood → Olympian) selon le 1RM estimé rapporté au poids de corps (`src/lib/rank.ts`), barème différent pour les femmes.
-- Rang par groupe musculaire, niveau joueur et XP (chaque série validée rapporte de l'XP).
+- **Rang par muscle** (12 groupes) affiché sur une silhouette face/dos, plus un rang global (moyenne de tous les muscles).
+- Niveau joueur et XP (chaque série validée rapporte de l'XP).
 - Pendant une séance : toast « RANK UP » et « Nouveau record », résumé de fin avec XP gagnés.
 
 ## Architecture

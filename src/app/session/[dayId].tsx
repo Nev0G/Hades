@@ -11,6 +11,7 @@ import { addTo, toNumber } from '../../lib/numpad';
 import { all, first, kvGet, remove, save } from '../../lib/db';
 import { getProfile, lastSets } from '../../lib/repo';
 import { bodyWeight, exerciseStats } from '../../lib/stats';
+import { pushStats } from '../../lib/social';
 import { effectiveE1rm, rankFor, setXp, standardFor, TIERS, TIER_COLOR } from '../../lib/rank';
 import { cancelRestEnd, fmt, initRestNotifications, scheduleRestEnd } from '../../lib/rest';
 import { C } from '../../lib/theme';
@@ -151,6 +152,7 @@ export default function RunSession() {
     await cancelRestEnd();
     if (total === 0) return router.back();
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    getProfile().then((p) => (p?.username ? pushStats(p.username) : null)).catch(() => {}); // classement : silencieux hors-ligne
     setSummary({ xp: xp.current, sets: total, prs: prs.current, min: Math.max(1, Math.round((Date.now() - startedAt) / 60000)) });
   };
 

@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { SEED_EXERCISES } from './seed';
+import { SEED_FOODS } from './foodseed';
 
 export const SYNCED = [
   'profile', 'foods', 'food_entries', 'water', 'exercises', 'programs', 'program_days',
@@ -10,7 +11,7 @@ export type Table = (typeof SYNCED)[number];
 const SCHEMA = `
 PRAGMA journal_mode = WAL;
 CREATE TABLE IF NOT EXISTS profile(id TEXT PRIMARY KEY, sex TEXT, age INTEGER, height_cm REAL, weight_kg REAL, goal TEXT, activity TEXT,
-  tdee INTEGER, kcal INTEGER, protein INTEGER, carbs INTEGER, fat INTEGER, keep_awake INTEGER DEFAULT 1, updated_at INTEGER, deleted INTEGER DEFAULT 0);
+  tdee INTEGER, kcal INTEGER, protein INTEGER, carbs INTEGER, fat INTEGER, keep_awake INTEGER DEFAULT 1, username TEXT, updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS foods(id TEXT PRIMARY KEY, name TEXT, brand TEXT, barcode TEXT, kcal REAL, protein REAL, carbs REAL, fat REAL,
   serving_g REAL, custom INTEGER DEFAULT 0, updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE INDEX IF NOT EXISTS foods_barcode ON foods(barcode);
@@ -41,6 +42,8 @@ export function getDb() {
     dbPromise = (async () => {
       const db = await SQLite.openDatabaseAsync('hades.db');
       await db.execAsync(SCHEMA);
+      // Migration : colonne ajoutée après la première version.
+      try { await db.execAsync('ALTER TABLE profile ADD COLUMN username TEXT'); } catch { /* déjà présente */ }
       await seed(db);
       return db;
     })();
@@ -61,14 +64,19 @@ export function dateKey(d: Date) {
   return `${d.getFullYear()}-${m}-${day}`;
 }
 
+/** Insère (sans écraser) les exercices et aliments de base : les nouvelles versions de l'app ajoutent leurs nouveautés. */
 async function seed(db: SQLite.SQLiteDatabase) {
-  const row = await db.getFirstAsync<{ n: number }>('SELECT COUNT(*) n FROM exercises');
-  if (row && row.n > 0) return;
   await db.withTransactionAsync(async () => {
     for (const e of SEED_EXERCISES) {
       await db.runAsync(
-        'INSERT INTO exercises(id,name,muscle,equipment,compound,custom,updated_at) VALUES(?,?,?,?,?,0,0)',
+        'INSERT OR IGNORE INTO exercises(id,name,muscle,equipment,compound,custom,updated_at) VALUES(?,?,?,?,?,0,0)',
         [`seed-${e.name}`, e.name, e.muscle, e.equipment, e.compound ? 1 : 0],
+      );
+    }
+    for (const f of SEED_FOODS) {
+      await db.runAsync(
+        'INSERT OR IGNORE INTO foods(id,name,brand,barcode,kcal,protein,carbs,fat,serving_g,custom,updated_at) VALUES(?,?,?,?,?,?,?,?,?,0,0)',
+        [`seedfood-${f.name}`, f.name, '', null, f.kcal, f.protein, f.carbs, f.fat, f.serving_g ?? 100],
       );
     }
   });

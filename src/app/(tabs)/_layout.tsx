@@ -11,8 +11,9 @@ export default function TabsLayout() {
         tabBarStyle: { backgroundColor: C.card, borderTopWidth: 0, height: 62 },
         tabBarActiveTintColor: C.blue,
         tabBarInactiveTintColor: C.dim,
-        tabBarLabelStyle: { fontWeight: '700', fontSize: 11, letterSpacing: 0.8 },
+        tabBarLabelStyle: { fontWeight: '700', fontSize: 10, letterSpacing: 0, marginHorizontal: 0 },
         tabBarIconStyle: { display: 'none' },
+        tabBarItemStyle: { paddingHorizontal: 0 },
         tabBarLabelPosition: 'beside-icon',
       }}
     >
@@ -20,6 +21,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="food" options={{ title: 'FOOD' }} />
       <Tabs.Screen name="train" options={{ title: 'TRAIN' }} />
       <Tabs.Screen name="stats" options={{ title: 'STATS' }} />
+      <Tabs.Screen name="social" options={{ title: 'SOCIAL' }} />
       <Tabs.Screen name="profile" options={{ title: 'PROFIL' }} />
     </Tabs>
   );

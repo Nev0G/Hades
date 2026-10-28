@@ -2,77 +2,114 @@ import React, { useState } from 'react';
 import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Bar, Btn, Card, Screen, T } from '../../components/ui';
-import { dateKey, remove } from '../../lib/db';
+import { Gauge, Ring } from '../../components/Gauge';
+import { all, dateKey, remove } from '../../lib/db';
 import { useLoad } from '../../lib/hooks';
-import { entriesFor, getProfile, getWater, MEALS, setWater } from '../../lib/repo';
+import { entriesFor, getProfile, getWater, Meal, MEALS, setWater } from '../../lib/repo';
 import { C, GLASSES_ML } from '../../lib/theme';
+
+const SHARE: Record<Meal, number> = { 'PETIT-DEJEUNER': 0.25, DEJEUNER: 0.35, DINER: 0.3, COLLATIONS: 0.1 };
+const LABEL: Record<Meal, string> = { 'PETIT-DEJEUNER': 'Petit-déjeuner', DEJEUNER: 'Déjeuner', DINER: 'Dîner', COLLATIONS: 'Collations' };
+const ICON: Record<Meal, string> = { 'PETIT-DEJEUNER': '☕', DEJEUNER: '🥗', DINER: '🍽', COLLATIONS: '🍎' };
+const KCAL_PER_MIN = 6; // estimation grossière d'une séance de musculation
 
 export default function Journal() {
   const router = useRouter();
   const [date, setDate] = useState(dateKey(new Date()));
-  const [data, reload] = useLoad(async () => ({
-    profile: await getProfile(), entries: await entriesFor(date), water: await getWater(date),
-  }), [date]);
+  const [open, setOpen] = useState<Meal | null>(null);
+  const [data, reload] = useLoad(async () => {
+    const sess = await all<{ started_at: number; ended_at: number }>('SELECT started_at,ended_at FROM sessions WHERE deleted=0 AND ended_at IS NOT NULL');
+    const burnedMin = sess.filter((s) => dateKey(new Date(s.started_at)) === date).reduce((a, s) => a + (s.ended_at - s.started_at) / 60000, 0);
+    return { profile: await getProfile(), entries: await entriesFor(date), water: await getWater(date), burned: Math.round(burnedMin * KCAL_PER_MIN) };
+  }, [date]);
 
   const shift = (d: number) => {
     const [y, m, day] = date.split('-').map(Number);
     setDate(dateKey(new Date(y, m - 1, day + d)));
   };
   if (!data || !data.profile) return <Screen><T>...</T></Screen>;
-  const { profile: p, entries, water } = data;
+  const { profile: p, entries, water, burned } = data;
   const sum = entries.reduce((a, e) => ({ kcal: a.kcal + e.kcal, p: a.p + e.protein, c: a.c + e.carbs, f: a.f + e.fat }), { kcal: 0, p: 0, c: 0, f: 0 });
-  const left = p.kcal - sum.kcal;
+  const remaining = Math.round(p.kcal + burned - sum.kcal);
+  const isToday = date === dateKey(new Date());
 
   return (
-    <Screen
-      footer={<Btn label="+ AJOUTER UN ALIMENT" onPress={() => router.push({ pathname: '/add-food', params: { meal: 'DEJEUNER', date } })} />}
-    >
+    <Screen>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Btn size="sm" variant="ghost" label="<" onPress={() => shift(-1)} />
-        <T size={16}>{date}</T>
-        <Btn size="sm" variant="ghost" label=">" onPress={() => shift(1)} />
+        <View>
+          <T size={30}>{isToday ? "Aujourd'hui" : date}</T>
+          <T size={13} dim>{date}</T>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <Btn size="sm" variant="ghost" label="<" onPress={() => shift(-1)} />
+          <Btn size="sm" variant="ghost" label=">" onPress={() => shift(1)} />
+        </View>
       </View>
 
-      <Card accent={left < 0 ? C.red : C.gold}>
-        <T size={11} dim>KCAL CONSOMMEES</T>
-        <T size={56} color={left < 0 ? C.red : C.gold}>{Math.round(sum.kcal)}</T>
-        <T size={13}>/ {p.kcal} OBJECTIF · {left >= 0 ? `${Math.round(left)} RESTANTES` : `${Math.round(-left)} EN TROP`}</T>
-        <Bar label="KCAL" unit="" value={sum.kcal} max={p.kcal} color={C.gold} />
-      </Card>
-
+      <T size={20}>Résumé</T>
       <Card>
-        <Bar label="PROTEINES" value={sum.p} max={p.protein} color={C.red} />
-        <Bar label="GLUCIDES" value={sum.c} max={p.carbs} color={C.orange} />
-        <Bar label="LIPIDES" value={sum.f} max={p.fat} color={C.gold} />
-      </Card>
-
-      {MEALS.map((meal) => {
-        const list = entries.filter((e) => e.meal === meal);
-        const kc = list.reduce((a, e) => a + e.kcal, 0);
-        return (
-          <Card key={meal}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <T size={16}>{meal}</T>
-              <T size={14} color={C.orange}>{Math.round(kc)} KCAL</T>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ alignItems: 'center', width: 76 }}>
+            <T size={20}>{Math.round(sum.kcal)}</T>
+            <T size={12} dim>Mangé</T>
+          </View>
+          <Gauge value={sum.kcal - burned} max={p.kcal} size={170} color={remaining < 0 ? C.red : C.green} center={String(remaining)} label={remaining < 0 ? 'Dépassé' : 'Restant'} />
+          <View style={{ alignItems: 'center', width: 76 }}>
+            <T size={20}>{burned}</T>
+            <T size={12} dim>Brûlé ~</T>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          {[['Glucides', sum.c, p.carbs, C.orange], ['Protéines', sum.p, p.protein, C.blue], ['Lipides', sum.f, p.fat, C.gold]].map(([l, v, m, c]) => (
+            <View key={String(l)} style={{ flex: 1 }}>
+              <Bar stacked label={String(l)} value={Number(v)} max={Number(m)} color={String(c)} unit="g" />
             </View>
-            {list.map((e) => (
-              <Pressable key={e.id} onLongPress={async () => { await remove('food_entries', e.id); reload(); }} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <T size={12} style={{ flex: 1 }}>{e.name} · {Math.round(e.grams)}G</T>
-                <T size={12} dim>{Math.round(e.kcal)}</T>
+          ))}
+        </View>
+      </Card>
+
+      <T size={20}>Nutrition</T>
+      <View style={{ gap: 10 }}>
+        {MEALS.map((meal) => {
+          const list = entries.filter((e) => e.meal === meal);
+          const kc = Math.round(list.reduce((a, e) => a + e.kcal, 0));
+          const target = Math.round(p.kcal * SHARE[meal]);
+          const expanded = open === meal;
+          return (
+            <Card key={meal} style={{ padding: 12 }}>
+              <Pressable onPress={() => setOpen(expanded ? null : meal)} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Ring value={kc} max={target}><T size={20}>{ICON[meal]}</T></Ring>
+                <View style={{ flex: 1 }}>
+                  <T size={17}>{LABEL[meal]}</T>
+                  <T size={13} dim>{kc} / {target} kcal</T>
+                  <T size={12} dim>{list.length ? list.map((e) => e.name).join(', ').slice(0, 42) : 'Rien de noté'}</T>
+                </View>
+                <Pressable onPress={() => router.push({ pathname: '/add-food', params: { meal, date } })}
+                  style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' }}>
+                  <T size={26} color="#fff">+</T>
+                </Pressable>
               </Pressable>
-            ))}
-            {list.length > 0 && <T size={10} dim>APPUI LONG = SUPPRIMER</T>}
-            <Btn size="sm" variant="ghost" label="+ AJOUTER" onPress={() => router.push({ pathname: '/add-food', params: { meal, date } })} />
-          </Card>
-        );
-      })}
+              {expanded && list.map((e) => (
+                <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 6, borderTopWidth: 1, borderTopColor: C.line }}>
+                  <View style={{ flex: 1 }}>
+                    <T size={14}>{e.name}</T>
+                    <T size={12} dim>{Math.round(e.grams)} g · P {Math.round(e.protein)} · G {Math.round(e.carbs)} · L {Math.round(e.fat)}</T>
+                  </View>
+                  <T size={14}>{Math.round(e.kcal)}</T>
+                  <T size={13} color={C.red} style={{ marginLeft: 14 }} onPress={async () => { await remove('food_entries', e.id); reload(); }}>Suppr.</T>
+                </View>
+              ))}
+            </Card>
+          );
+        })}
+      </View>
 
       <Card>
-        <T size={16}>EAU</T>
+        <T size={18}>Eau</T>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Btn size="sm" variant="ghost" label="-" onPress={async () => { await setWater(date, water.glasses - 1); reload(); }} />
-          <T size={32} color={C.gold} style={{ flex: 1, textAlign: 'center' }}>{water.glasses} <T size={12} dim>VERRES · {(water.glasses * GLASSES_ML) / 1000}L</T></T>
-          <Btn size="sm" variant="gold" label="+ VERRE" onPress={async () => { await setWater(date, water.glasses + 1); reload(); }} />
+          <T size={30} color={C.blue} style={{ flex: 1, textAlign: 'center' }}>{water.glasses} <T size={12} dim>verres · {(water.glasses * GLASSES_ML) / 1000} L</T></T>
+          <Btn size="sm" label="+ Verre" onPress={async () => { await setWater(date, water.glasses + 1); reload(); }} />
         </View>
       </Card>
     </Screen>
