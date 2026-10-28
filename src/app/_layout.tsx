@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, JetBrainsMono_800ExtraBold, JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import * as Notifications from 'expo-notifications';
@@ -17,18 +17,23 @@ Notifications.setNotificationHandler({
 });
 
 export default function Root() {
-  const [fontsLoaded] = useFonts({ JetBrainsMono_800ExtraBold, JetBrainsMono_500Medium, Inter_700Bold, Inter_500Medium });
+  const [fontsLoaded, fontError] = useFonts({ JetBrainsMono_800ExtraBold, JetBrainsMono_500Medium, Inter_700Bold, Inter_500Medium });
   const [ready, setReady] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
   const [route, setRoute] = useState<'login' | 'onboarding' | 'app'>('login');
   const router = useRouter();
   const segments = useSegments();
 
   useEffect(() => {
     (async () => {
-      await getDb();
-      const s = await getSession();
-      const p = await getProfile();
-      setRoute(!s ? 'login' : !p ? 'onboarding' : 'app');
+      try {
+        await getDb();
+        const s = await getSession();
+        const p = await getProfile();
+        setRoute(!s ? 'login' : !p ? 'onboarding' : 'app');
+      } catch (e: any) {
+        setInitError(String(e?.message ?? e));
+      }
       setReady(true);
     })();
     return startSyncLoop();
@@ -48,11 +53,30 @@ export default function Root() {
     })();
   }, [ready, segments, route]);
 
-  if (!fontsLoaded || !ready) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
+  if (initError) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg, padding: 24, justifyContent: 'center' }}>
+        <Text style={{ color: C.red, fontSize: 18 }}>ERREUR AU DEMARRAGE</Text>
+        <Text style={{ color: C.text, marginTop: 12 }}>{initError}</Text>
+      </View>
+    );
+  }
+  // Polices : on n'attend pas indéfiniment si le chargement échoue (police système en repli).
+  if ((!fontsLoaded && !fontError) || !ready) return <View style={{ flex: 1, backgroundColor: C.bg }} />;
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: 'none' }} />
     </SafeAreaProvider>
+  );
+}
+
+export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg, padding: 24, justifyContent: 'center', gap: 12 }}>
+      <Text style={{ color: C.red, fontSize: 18 }}>ERREUR</Text>
+      <Text style={{ color: C.text }}>{error.message}</Text>
+      <Text style={{ color: C.gold, fontSize: 16 }} onPress={retry}>REESSAYER</Text>
+    </View>
   );
 }
