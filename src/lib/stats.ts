@@ -129,3 +129,45 @@ export async function publicSummary() {
   for (const m of mr.muscles) if (m.tier) muscle_ranks[m.muscle] = Math.round((m.score ?? 0) * 100) / 100;
   return { xp: lvl.xp, level: lvl.level, week_xp: week, rank_index: Math.floor(mr.overall.score), rank_score: Math.round(mr.overall.score * 100) / 100, muscle_ranks };
 }
+
+import { computeRecovery, Recovery } from './recovery';
+
+/** Récupération de chaque muscle d'après les séries des 14 derniers jours. */
+export async function loadRecovery(now = Date.now()): Promise<Recovery[]> {
+  const rows = (await setRows()).filter((r) => r.done_at > now - 14 * 86400000);
+  return computeRecovery(rows.map((r) => ({ muscle: r.muscle, exercise: r.name, done_at: r.done_at })), now);
+}
+
+/** Volume (kg) par semaine sur les `weeks` dernières semaines (du plus ancien au plus récent). */
+export async function weeklyVolume(weeks = 8): Promise<{ label: string; volume: number; sessions: number }[]> {
+  const rows = await setRows();
+  const ss = await sessions();
+  const monThis = mondayOf(new Date()).getTime();
+  return Array.from({ length: weeks }, (_, i) => {
+    const start = monThis - (weeks - 1 - i) * 7 * 86400000, end = start + 7 * 86400000;
+    return {
+      label: new Date(start).toLocaleDateString('fr-FR', { day: 'numeric', month: 'numeric' }),
+      volume: Math.round(rows.filter((r) => r.done_at >= start && r.done_at < end).reduce((a, r) => a + r.weight * r.reps, 0)),
+      sessions: ss.filter((s) => s.started_at >= start && s.started_at < end).length,
+    };
+  });
+}
+
+/** Séries consécutives : semaines avec au moins une séance (jusqu'à la semaine en cours). */
+export async function weekStreak(): Promise<number> {
+  const ss = await sessions();
+  const monThis = mondayOf(new Date()).getTime();
+  let streak = 0;
+  for (let w = 0; w < 104; w++) {
+    const start = monThis - w * 7 * 86400000, end = start + 7 * 86400000;
+    const has = ss.some((s) => s.started_at >= start && s.started_at < end);
+    if (has) streak++;
+    else if (w > 0) break; // la semaine en cours peut encore être vide
+  }
+  return streak;
+}
+
+export async function sessionsThisWeek(): Promise<number> {
+  const mon = mondayOf(new Date()).getTime();
+  return (await sessions()).filter((s) => s.started_at >= mon).length;
+}

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { TextInput } from 'react-native';
 import { Bar, Btn, Card, Screen, T } from '../../components/ui';
+import { saveTemplate } from '../../lib/meals';
 import { Gauge, Ring } from '../../components/Gauge';
 import { all, dateKey, remove } from '../../lib/db';
 import { useLoad } from '../../lib/hooks';
@@ -17,6 +19,9 @@ export default function Journal() {
   const router = useRouter();
   const [date, setDate] = useState(dateKey(new Date()));
   const [open, setOpen] = useState<Meal | null>(null);
+  const [saving, setSaving] = useState<Meal | null>(null);
+  const [tname, setTname] = useState('');
+  const [savedMsg, setSavedMsg] = useState('');
   const [data, reload] = useLoad(async () => {
     const sess = await all<{ started_at: number; ended_at: number }>('SELECT started_at,ended_at FROM sessions WHERE deleted=0 AND ended_at IS NOT NULL');
     const burnedMin = sess.filter((s) => dateKey(new Date(s.started_at)) === date).reduce((a, s) => a + (s.ended_at - s.started_at) / 60000, 0);
@@ -99,10 +104,22 @@ export default function Journal() {
                   <T size={13} color={C.red} style={{ marginLeft: 14 }} onPress={async () => { await remove('food_entries', e.id); reload(); }}>Suppr.</T>
                 </View>
               ))}
+              {expanded && list.length > 0 && (saving === meal ? (
+                <View style={{ gap: 8 }}>
+                  <TextInput value={tname} onChangeText={setTname} autoFocus placeholder="Nom du repas" placeholderTextColor={C.dim} style={{ backgroundColor: C.card2, color: C.text, borderRadius: 10, padding: 12, fontSize: 16 }} />
+                  <Btn size="sm" label="Enregistrer le repas" disabled={!tname.trim()} onPress={async () => {
+                    await saveTemplate({ name: tname, kind: 'meal', portions: 1, items: list.map((e) => ({ name: e.name, grams: e.grams, kcal: e.kcal, protein: e.protein, carbs: e.carbs, fat: e.fat })) });
+                    setSaving(null); setTname(''); setSavedMsg(`« ${tname.trim()} » enregistré : retrouve-le dans Ajouter > Repas`);
+                  }} />
+                </View>
+              ) : (
+                <Btn size="sm" variant="ghost" label="Enregistrer comme repas" onPress={() => { setSaving(meal); setTname(LABEL[meal]); }} />
+              ))}
             </Card>
           );
         })}
       </View>
+      {savedMsg ? <T size={13} color={C.green}>{savedMsg}</T> : null}
 
       <Card>
         <T size={18}>Eau</T>

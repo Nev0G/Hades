@@ -6,12 +6,9 @@ import { MuscleRank } from '../lib/stats';
 
 const GREY = '#3A3A3C';
 
-/** Silhouette face / dos : chaque muscle est coloré selon son rang (gris = jamais travaillé). */
-export function BodyRanks({ muscles, width = 150 }: { muscles: MuscleRank[]; width?: number }) {
-  const col = (m: string) => {
-    const t = muscles.find((x) => x.muscle === m)?.tier as Tier | null | undefined;
-    return t ? TIER_COLOR[t] : GREY;
-  };
+/** Silhouette face / dos hors-ligne : `colors` donne la couleur de chaque groupe musculaire (gris par défaut). */
+export function BodyMap({ colors, width = 150 }: { colors: Record<string, string>; width?: number }) {
+  const col = (m: string) => colors[m] ?? GREY;
   const h = (width * 250) / 120;
   const base = '#2A2A2D';
   return (
@@ -59,4 +56,11 @@ export function BodyRanks({ muscles, width = 150 }: { muscles: MuscleRank[]; wid
       </Svg>
     </View>
   );
+}
+
+/** Rangs : chaque muscle est coloré selon son rang (gris = jamais travaillé). */
+export function BodyRanks({ muscles, width = 150 }: { muscles: MuscleRank[]; width?: number }) {
+  const colors: Record<string, string> = {};
+  for (const m of muscles) if (m.tier) colors[m.muscle] = TIER_COLOR[m.tier as Tier];
+  return <BodyMap colors={colors} width={width} />;
 }

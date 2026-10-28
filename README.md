@@ -24,6 +24,14 @@ Sans configuration : mode local (données sur l'appareil, pas de social).
 **Tester les règles d'accès (RLS)** sur un Postgres local jetable : `PGHOST=… PGUSER=… ./supabase/run_tests.sh` (affiche `RLS_OK`).
 Les scores du classement et des défis sont calculés par l'app (mode « confiance ») : les données d'entraînement détaillées restent privées.
 
+## Fonctions
+
+- **Bibliothèque** : dossiers de routines (créer, renommer, supprimer), favoris, routines sans dossier ; menu ⋮ (éditer, renommer, dupliquer, déplacer, favori, supprimer) ; tri par récent / A→Z / plus utilisées / nombre d'exercices / création.
+- **Récupération musculaire** : estimation par muscle d'après le volume et le délai depuis la dernière séance (`src/lib/recovery.ts`), affichée sur le dashboard ; une séance est conseillée selon la disponibilité de ses muscles.
+- **Objectifs modifiables** (Profil > Mes objectifs) : calories, protéines / glucides / lipides (avec répartitions rapides), profil corporel, eau, séances par semaine, poids cible.
+- **Repas enregistrés et recettes perso** : Nutrition > Ajouter > Repas / Recettes, ou « Enregistrer comme repas » depuis un repas du jour.
+- **Visualisation musculaire** : API [Muscle Visualizer d'ExerciseDB](https://github.com/ExerciseDB/muscle-visualizer-api) si `EXPO_PUBLIC_RAPIDAPI_KEY` est défini (abonnement RapidAPI), avec repli automatique sur la silhouette hors-ligne.
+
 ## Exercices
 
 120 exercices fournis hors-ligne + import de ~900 exercices depuis l'API ouverte [wger](https://wger.de) (Train > Bibliothèque > Importer). Recherche d'aliments : base locale + Open Food Facts.

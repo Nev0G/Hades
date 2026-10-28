@@ -4,14 +4,14 @@ import { SEED_FOODS } from './foodseed';
 
 export const SYNCED = [
   'profile', 'foods', 'food_entries', 'water', 'exercises', 'programs', 'program_days',
-  'program_exercises', 'sessions', 'sets', 'body_weights', 'photos',
+  'program_exercises', 'sessions', 'sets', 'body_weights', 'photos', 'meal_templates',
 ] as const;
 export type Table = (typeof SYNCED)[number];
 
 const SCHEMA = `
 PRAGMA journal_mode = WAL;
 CREATE TABLE IF NOT EXISTS profile(id TEXT PRIMARY KEY, sex TEXT, age INTEGER, height_cm REAL, weight_kg REAL, goal TEXT, activity TEXT,
-  tdee INTEGER, kcal INTEGER, protein INTEGER, carbs INTEGER, fat INTEGER, keep_awake INTEGER DEFAULT 1, username TEXT, updated_at INTEGER, deleted INTEGER DEFAULT 0);
+  tdee INTEGER, kcal INTEGER, protein INTEGER, carbs INTEGER, fat INTEGER, keep_awake INTEGER DEFAULT 1, username TEXT, custom_targets INTEGER DEFAULT 0, updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS foods(id TEXT PRIMARY KEY, name TEXT, brand TEXT, barcode TEXT, kcal REAL, protein REAL, carbs REAL, fat REAL,
   serving_g REAL, custom INTEGER DEFAULT 0, updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE INDEX IF NOT EXISTS foods_barcode ON foods(barcode);
@@ -21,8 +21,8 @@ CREATE INDEX IF NOT EXISTS entries_date ON food_entries(date);
 CREATE TABLE IF NOT EXISTS water(id TEXT PRIMARY KEY, date TEXT, glasses INTEGER DEFAULT 0, updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS exercises(id TEXT PRIMARY KEY, name TEXT, muscle TEXT, equipment TEXT, compound INTEGER DEFAULT 0, custom INTEGER DEFAULT 0,
   updated_at INTEGER, deleted INTEGER DEFAULT 0);
-CREATE TABLE IF NOT EXISTS programs(id TEXT PRIMARY KEY, name TEXT, updated_at INTEGER, deleted INTEGER DEFAULT 0);
-CREATE TABLE IF NOT EXISTS program_days(id TEXT PRIMARY KEY, program_id TEXT, name TEXT, pos INTEGER, updated_at INTEGER, deleted INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS programs(id TEXT PRIMARY KEY, name TEXT, fav INTEGER DEFAULT 0, created_at INTEGER DEFAULT 0, updated_at INTEGER, deleted INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS program_days(id TEXT PRIMARY KEY, program_id TEXT, name TEXT, pos INTEGER, fav INTEGER DEFAULT 0, created_at INTEGER DEFAULT 0, updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS program_exercises(id TEXT PRIMARY KEY, day_id TEXT, exercise_id TEXT, pos INTEGER, sets INTEGER DEFAULT 3, rest_s INTEGER DEFAULT 90,
   updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY, day_id TEXT, name TEXT, started_at INTEGER, ended_at INTEGER, updated_at INTEGER, deleted INTEGER DEFAULT 0);
@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS sets(id TEXT PRIMARY KEY, session_id TEXT, exercise_i
 CREATE INDEX IF NOT EXISTS sets_ex ON sets(exercise_id, done_at);
 CREATE TABLE IF NOT EXISTS body_weights(id TEXT PRIMARY KEY, date TEXT, weight_kg REAL, updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS photos(id TEXT PRIMARY KEY, date TEXT, uri TEXT, weight_kg REAL, updated_at INTEGER, deleted INTEGER DEFAULT 0);
+CREATE TABLE IF NOT EXISTS meal_templates(id TEXT PRIMARY KEY, name TEXT, kind TEXT DEFAULT 'meal', portions REAL DEFAULT 1, items TEXT, updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS outbox(seq INTEGER PRIMARY KEY AUTOINCREMENT, tbl TEXT, row_id TEXT, payload TEXT);
 CREATE TABLE IF NOT EXISTS kv(k TEXT PRIMARY KEY, v TEXT);
 `;
@@ -42,8 +43,17 @@ export function getDb() {
     dbPromise = (async () => {
       const db = await SQLite.openDatabaseAsync('hades.db');
       await db.execAsync(SCHEMA);
-      // Migration : colonne ajoutée après la première version.
-      try { await db.execAsync('ALTER TABLE profile ADD COLUMN username TEXT'); } catch { /* déjà présente */ }
+      // Migrations : colonnes ajoutées après la première version.
+      for (const sql of [
+        'ALTER TABLE profile ADD COLUMN username TEXT',
+        'ALTER TABLE profile ADD COLUMN custom_targets INTEGER DEFAULT 0',
+        'ALTER TABLE programs ADD COLUMN fav INTEGER DEFAULT 0',
+        'ALTER TABLE programs ADD COLUMN created_at INTEGER DEFAULT 0',
+        'ALTER TABLE program_days ADD COLUMN fav INTEGER DEFAULT 0',
+        'ALTER TABLE program_days ADD COLUMN created_at INTEGER DEFAULT 0',
+      ]) {
+        try { await db.execAsync(sql); } catch { /* déjà présente */ }
+      }
       await seed(db);
       return db;
     })();

@@ -41,6 +41,7 @@ export default function Profile() {
         <T size={13}>OBJECTIF {p.kcal} KCAL · TDEE {p.tdee}</T>
         <T size={13}>P {p.protein}G · G {p.carbs}G · L {p.fat}G</T>
       </Card>
+      <Btn label="Modifier mes objectifs (calories, macros, eau…)" onPress={() => router.push('/goals')} />
       <T size={11} dim>OBJECTIF</T>
       <Chips options={GOALS} value={p.goal} onChange={(g) => update({ goal: g })} color={C.orange} />
       <T size={11} dim>ACTIVITE</T>

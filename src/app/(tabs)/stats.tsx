@@ -3,7 +3,7 @@ import { Image, Pressable, View, useWindowDimensions } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Btn, Card, Screen, T, Title } from '../../components/ui';
 import { RankBadge } from '../../components/RankBadge';
-import { exerciseStats } from '../../lib/stats';
+import { exerciseStats, muscleRanks } from '../../lib/stats';
 import { TIER_COLOR } from '../../lib/rank';
 import { NumPad } from '../../components/NumPad';
 import { WireChart } from '../../components/WireChart';
@@ -64,6 +64,24 @@ export default function Stats() {
         <T size={32} color={C.gold}>{kg || (d?.weights.at(-1)?.weight_kg ?? 0)} <T size={12} dim>KG</T></T>
         <NumPad value={kg} onChange={setKg} />
         <Btn variant="gold" label="ENREGISTRER LE POIDS" disabled={!toNumber(kg)} onPress={async () => { await logWeight(toNumber(kg)); setKg(''); reload(); }} />
+      </Card>
+
+      <Card>
+        <T size={18}>Rang par muscle</T>
+        {muscleRanks(d?.ex ?? []).muscles.map((m) => (
+          <View key={m.muscle} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            {m.tier ? <RankBadge tier={m.tier} size={32} /> : <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: C.card2 }} />}
+            <View style={{ flex: 1, gap: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <T size={14}>{m.muscle}</T>
+                <T size={13} color={m.tier ? TIER_COLOR[m.tier] : C.dim}>{m.tier ?? 'Non classé'}</T>
+              </View>
+              <View style={{ height: 6, backgroundColor: C.card2, borderRadius: 3, overflow: 'hidden' }}>
+                <View style={{ width: `${Math.round(m.progress * 100)}%`, height: '100%', backgroundColor: m.tier ? TIER_COLOR[m.tier] : C.card2 }} />
+              </View>
+            </View>
+          </View>
+        ))}
       </Card>
 
       <T size={18}>Exercices</T>

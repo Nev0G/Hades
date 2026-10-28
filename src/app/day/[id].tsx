@@ -2,6 +2,8 @@ import React from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Btn, Card, Screen, T, Title } from '../../components/ui';
+import { MuscleMap } from '../../components/MuscleMap';
+import { C } from '../../lib/theme';
 import { all, first, remove, save } from '../../lib/db';
 import { useLoad } from '../../lib/hooks';
 
@@ -26,6 +28,18 @@ export default function DayEditor() {
   return (
     <Screen footer={<><Btn label="+ EXERCICE" onPress={() => router.push({ pathname: '/exercises', params: { pickDay: id } })} /><Btn variant="ghost" label="RETOUR" onPress={() => router.back()} /></>}>
       <Title>{data?.day?.name ?? ''}</Title>
+      {data && data.rows.length > 0 && (
+        <Card>
+          <T size={14} dim>Muscles ciblés</T>
+          <MuscleMap
+            width={110}
+            colors={Object.fromEntries([...new Set(data.rows.map((r) => r.muscle))].map((m) => [m, C.blue]))}
+            api={{ muscles: [...new Set(data.rows.map((r) => r.muscle))], color: '#2F7BF6' }}
+          />
+          <T size={12} dim>{[...new Set(data.rows.map((r) => r.muscle))].join(' · ')}</T>
+        </Card>
+      )}
+      <Btn label="Lancer la séance" onPress={() => router.push({ pathname: '/session/[dayId]', params: { dayId: id } })} />
       {data?.rows.map((r) => (
         <Card key={r.id}>
           <T size={14}>{r.name}</T>

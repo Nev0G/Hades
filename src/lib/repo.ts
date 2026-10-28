@@ -3,7 +3,7 @@ import { computeTargets, Activity, Goal, Sex } from './nutrition';
 
 export type Profile = {
   id: string; sex: Sex; age: number; height_cm: number; weight_kg: number; goal: Goal; activity: Activity;
-  tdee: number; kcal: number; protein: number; carbs: number; fat: number; keep_awake: number; username?: string | null;
+  tdee: number; kcal: number; protein: number; carbs: number; fat: number; keep_awake: number; username?: string | null; custom_targets?: number;
 };
 export const MEALS = ['PETIT-DEJEUNER', 'DEJEUNER', 'DINER', 'COLLATIONS'] as const;
 export type Meal = (typeof MEALS)[number];
@@ -17,8 +17,28 @@ export async function saveProfile(p: { sex: Sex; age: number; height_cm: number;
   const id = existing && existing.id !== 'me' ? existing.id : uid();
   if (existing?.id === 'me') await remove('profile', 'me');
   const username = (await kvGet('pending_username')) ?? existing?.username ?? null;
-  await save('profile', { id, username, ...p, tdee: t.tdee, kcal: t.kcal, protein: t.protein, carbs: t.carbs, fat: t.fat, keep_awake: existing?.keep_awake ?? keepAwake });
+  // Objectifs personnalisés (calories / macros saisis à la main) : conservés tant qu'on ne repasse pas en automatique.
+  const custom = existing?.custom_targets ? existing : null;
+  await save('profile', {
+    id, username, ...p, tdee: t.tdee,
+    kcal: custom?.kcal ?? t.kcal, protein: custom?.protein ?? t.protein, carbs: custom?.carbs ?? t.carbs, fat: custom?.fat ?? t.fat,
+    custom_targets: custom ? 1 : 0, keep_awake: existing?.keep_awake ?? keepAwake,
+  });
   await logWeight(p.weight_kg);
+}
+
+/** Fixe manuellement calories et macros. */
+export async function saveTargets(t: { kcal: number; protein: number; carbs: number; fat: number }) {
+  const p = await getProfile();
+  if (p) await save('profile', { ...p, ...t, custom_targets: 1 });
+}
+
+/** Repasse en calcul automatique (TDEE + objectif). */
+export async function resetTargets() {
+  const p = await getProfile();
+  if (!p) return;
+  const t = computeTargets({ sex: p.sex, age: p.age, heightCm: p.height_cm, weightKg: p.weight_kg, goal: p.goal, activity: p.activity });
+  await save('profile', { ...p, tdee: t.tdee, kcal: t.kcal, protein: t.protein, carbs: t.carbs, fat: t.fat, custom_targets: 0 });
 }
 
 export async function logWeight(kg: number, date = today()) {
@@ -60,4 +80,4 @@ export const recentFoods = () =>
   all<Food>(
     `SELECT * FROM foods WHERE deleted=0 ORDER BY
        CASE WHEN name IN (SELECT name FROM food_entries WHERE deleted=0 ORDER BY updated_at DESC LIMIT 30) THEN 0 ELSE 1 END,
-       custom DESC, name LIMIT 30`);
+       custom DESC, name LIMIT 80`);

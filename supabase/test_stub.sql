@@ -1,4 +1,8 @@
-create role anon nologin; create role authenticated nologin; create role service_role nologin;
+do $$ begin
+  begin create role anon nologin; exception when duplicate_object then null; end;
+  begin create role authenticated nologin; exception when duplicate_object then null; end;
+  begin create role service_role nologin; exception when duplicate_object then null; end;
+end $$;
 create schema auth; create schema storage;
 create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 create table storage.buckets (id text primary key, name text, public boolean);
