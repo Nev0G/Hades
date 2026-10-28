@@ -10,7 +10,7 @@ import { all, first, kvGet, remove, save } from '../../lib/db';
 import { getProfile, lastSets, SetRow } from '../../lib/repo';
 import { estimate1RM } from '../../lib/strength';
 import { cancelRestEnd, fmt, initRestNotifications, scheduleRestEnd } from '../../lib/rest';
-import { B, C } from '../../lib/theme';
+import { C, inset, raised } from '../../lib/theme';
 
 type Item = { id: string; exercise_id: string; name: string; sets: number; rest_s: number; compound: number };
 
@@ -157,7 +157,7 @@ export default function RunSession() {
       <T size={34} style={{ letterSpacing: 1 }}>{item.name}</T>
       <View style={{ flexDirection: 'row', gap: 8 }}>
         {(['weight', 'reps'] as const).map((f) => (
-          <Pressable key={f} onPress={() => setField(f)} style={{ flex: 1, borderWidth: B, borderColor: field === f ? C.gold : C.line, backgroundColor: C.card, padding: 10 }}>
+          <Pressable key={f} onPress={() => setField(f)} style={[{ flex: 1, padding: 14 }, field === f ? inset(5, 20) : raised(6, 20)]}>
             <T size={11} dim>{f === 'weight' ? 'KG' : 'REPS'}</T>
             <T size={48} color={field === f ? C.gold : C.text}>{(f === 'weight' ? weight : reps) || '0'}</T>
           </Pressable>

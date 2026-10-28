@@ -92,7 +92,7 @@ export default function Stats() {
         <T size={10} dim>TOUCHE 2 PHOTOS POUR COMPARER</T>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
           {d?.photos.map((p) => (
-            <View key={p.id} style={{ width: '32.5%', borderWidth: 3, borderColor: cmp.includes(p.id) ? C.gold : C.line }}>
+            <View key={p.id} style={{ width: '32%', borderRadius: 12, overflow: 'hidden', borderWidth: cmp.includes(p.id) ? 3 : 0, borderColor: C.gold }}>
               <Image source={{ uri: p.uri }} style={{ width: '100%', aspectRatio: 3 / 4 }} onTouchEnd={() => toggle(p.id)} />
               <T size={9} color={C.gold} style={{ position: 'absolute', bottom: 2, left: 2, backgroundColor: '#000' }}>{p.date} {p.weight_kg}KG</T>
             </View>

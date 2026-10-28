@@ -8,7 +8,7 @@ import { save } from '../lib/db';
 import { Food, searchFoods } from '../lib/repo';
 import { recipePer100 } from '../lib/nutrition';
 import { useLoad } from '../lib/hooks';
-import { B, C } from '../lib/theme';
+import { C, inset, raised } from '../lib/theme';
 
 type Item = { food: Food; grams: string };
 
@@ -35,7 +35,7 @@ export default function Recipe() {
       <Title>RECETTE</Title>
       <Field label="NOM DU PLAT" value={name} onChangeText={setName} />
       {items.map((it, i) => (
-        <Pressable key={i} onPress={() => setSel(i)} style={{ borderWidth: B, borderColor: i === sel ? C.gold : C.line, backgroundColor: C.card, padding: 10, flexDirection: 'row', justifyContent: 'space-between' }}>
+        <Pressable key={i} onPress={() => setSel(i)} style={[{ padding: 14, flexDirection: 'row', justifyContent: 'space-between' }, i === sel ? inset(4, 16) : raised(5, 16)]}>
           <T size={12} style={{ flex: 1 }}>{it.food.name}</T>
           <T size={14} color={C.gold}>{it.grams || '0'} G</T>
         </Pressable>

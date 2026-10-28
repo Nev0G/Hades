@@ -2,11 +2,11 @@ import React from 'react';
 import { Pressable, Text, View, StyleSheet, TextInput, ViewStyle, TextStyle, ScrollView } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { B, C, MONO, MONO_REG } from '../lib/theme';
+import { C, SANS, SANS_REG, MONO, inset, raised } from '../lib/theme';
 
 export function T({ children, style, size = 14, color = C.text, dim, onPress }: { children: React.ReactNode; style?: TextStyle; size?: number; color?: string; dim?: boolean; onPress?: () => void }) {
   return (
-    <Text onPress={onPress} style={[{ fontFamily: MONO, fontSize: size, color: dim ? C.dim : color, textTransform: 'uppercase' }, style]}>{children}</Text>
+    <Text onPress={onPress} style={[{ fontFamily: size >= 28 ? MONO : SANS, fontSize: size, color: dim ? C.dim : color, textTransform: 'uppercase', letterSpacing: size <= 14 ? 0.8 : 0 }, style]}>{children}</Text>
   );
 }
 
@@ -27,14 +27,14 @@ export function Screen({ children, scroll = true, footer }: { children: React.Re
 }
 
 export function Card({ children, style, accent }: { children: React.ReactNode; style?: ViewStyle; accent?: string }) {
-  return <View style={[s.card, accent ? { borderColor: accent } : null, style]}>{children}</View>;
+  return <View style={[s.card, style]}>{children}</View>;
 }
 
 export function Btn({
   label, onPress, variant = 'red', style, disabled, haptic = true, size = 'lg',
 }: { label: string; onPress: () => void; variant?: 'red' | 'gold' | 'orange' | 'ghost'; style?: ViewStyle; disabled?: boolean; haptic?: boolean; size?: 'lg' | 'sm' }) {
-  const bg = variant === 'ghost' ? C.bg : variant === 'gold' ? C.gold : variant === 'orange' ? C.orange : C.red;
-  const fg = variant === 'ghost' ? C.text : '#000';
+  const accent = variant === 'gold' ? C.gold : variant === 'orange' ? C.orange : variant === 'red' ? C.red : null;
+  const fg = accent ?? C.text;
   return (
     <Pressable
       accessibilityRole="button"
@@ -45,11 +45,12 @@ export function Btn({
       }}
       style={({ pressed }) => [
         s.btn, size === 'sm' && { paddingVertical: 10, paddingHorizontal: 12 },
-        { backgroundColor: bg, opacity: disabled ? 0.35 : 1, transform: [{ translateX: pressed ? 3 : 0 }, { translateY: pressed ? 3 : 0 }] },
+        pressed ? inset(4, 20) : raised(6, 20),
+        { opacity: disabled ? 0.4 : 1 },
         style,
       ]}
     >
-      <T size={size === 'sm' ? 13 : 18} color={fg} style={{ textAlign: 'center' }}>{label}</T>
+      <T size={size === 'sm' ? 13 : 16} color={fg} style={{ textAlign: 'center' }}>{label}</T>
     </Pressable>
   );
 }
@@ -63,7 +64,7 @@ export function Bar({ value, max, color = C.red, label, unit = 'G' }: { value: n
         <T size={12} dim>{Math.round(value)} / {Math.round(max)} {unit}</T>
       </View>
       <View style={s.track}>
-        <View style={{ width: `${pct * 100}%`, backgroundColor: value > max ? C.red : color, height: '100%' }} />
+        <View style={{ width: `${pct * 100}%`, backgroundColor: value > max ? C.red : color, height: '100%', borderRadius: 8 }} />
       </View>
     </View>
   );
@@ -92,8 +93,8 @@ export function Chips<V extends string>({ options, value, onChange, color = C.go
       {options.map((o) => {
         const on = o === value;
         return (
-          <Pressable key={o} onPress={() => onChange(o)} style={[s.chip, on && { backgroundColor: color }]}>
-            <T size={12} color={on ? '#000' : C.text}>{o}</T>
+          <Pressable key={o} onPress={() => onChange(o)} style={[s.chip, on ? inset(3, 14) : raised(4, 14)]}>
+            <T size={12} color={on ? color : C.dim}>{o}</T>
           </Pressable>
         );
       })}
@@ -104,9 +105,9 @@ export function Chips<V extends string>({ options, value, onChange, color = C.go
 export const Title = ({ children }: { children: React.ReactNode }) => <T size={28} style={{ letterSpacing: 1 }}>{children}</T>;
 
 const s = StyleSheet.create({
-  card: { backgroundColor: C.card, borderWidth: B, borderColor: C.line, padding: 14, gap: 10 },
-  btn: { borderWidth: B, borderColor: C.line, paddingVertical: 18, paddingHorizontal: 16, justifyContent: 'center' },
-  track: { height: 18, borderWidth: 2, borderColor: C.line, backgroundColor: C.bg },
-  input: { borderWidth: B, borderColor: C.line, color: C.text, fontFamily: MONO_REG, fontSize: 18, padding: 12, backgroundColor: C.card },
-  chip: { borderWidth: 2, borderColor: C.line, paddingVertical: 10, paddingHorizontal: 12, backgroundColor: C.bg },
+  card: { ...raised(8, 24), padding: 18, gap: 10 },
+  btn: { paddingVertical: 18, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 20 },
+  track: { height: 14, ...inset(3, 8), overflow: 'hidden' },
+  input: { ...inset(4, 16), color: C.text, fontFamily: SANS_REG, fontSize: 18, paddingVertical: 14, paddingHorizontal: 16 },
+  chip: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 14 },
 });

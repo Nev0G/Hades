@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#000000",
+    "backgroundColor": "#22252C",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.hades.tracker",
@@ -20,7 +20,7 @@
     "android": {
       "package": "app.hades.tracker",
       "adaptiveIcon": {
-        "backgroundColor": "#000000",
+        "backgroundColor": "#22252C",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

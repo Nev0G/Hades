@@ -9,6 +9,7 @@ import { getDb } from '../lib/db';
 import { getSession } from '../lib/auth';
 import { getProfile } from '../lib/repo';
 import { startSyncLoop } from '../lib/sync';
+import { Inter_700Bold, Inter_500Medium } from '@expo-google-fonts/inter';
 import { C } from '../lib/theme';
 
 Notifications.setNotificationHandler({
@@ -16,7 +17,7 @@ Notifications.setNotificationHandler({
 });
 
 export default function Root() {
-  const [fontsLoaded] = useFonts({ JetBrainsMono_800ExtraBold, JetBrainsMono_500Medium });
+  const [fontsLoaded] = useFonts({ JetBrainsMono_800ExtraBold, JetBrainsMono_500Medium, Inter_700Bold, Inter_500Medium });
   const [ready, setReady] = useState(false);
   const [route, setRoute] = useState<'login' | 'onboarding' | 'app'>('login');
   const router = useRouter();

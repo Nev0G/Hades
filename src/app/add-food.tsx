@@ -8,7 +8,7 @@ import { addTo, toNumber } from '../lib/numpad';
 import { first, save } from '../lib/db';
 import { Food, Meal, MEALS, searchFoods } from '../lib/repo';
 import { scaleFood } from '../lib/nutrition';
-import { B, C, MONO_REG } from '../lib/theme';
+import { C, SANS_REG, inset } from '../lib/theme';
 import { useLoad } from '../lib/hooks';
 
 type Mode = 'search' | 'qty' | 'create';
@@ -108,7 +108,7 @@ export default function AddFood() {
       <Title>AJOUTER · {meal}</Title>
       <Chips options={MEALS} value={meal} onChange={setMeal} color={C.orange} />
       <TextInput value={q} onChangeText={setQ} placeholder="RECHERCHER" placeholderTextColor={C.dim} autoCapitalize="characters"
-        style={{ borderWidth: B, borderColor: C.line, color: C.text, fontFamily: MONO_REG, fontSize: 18, padding: 12, backgroundColor: C.card }} />
+        style={[inset(4, 16), { color: C.text, fontFamily: SANS_REG, fontSize: 18, padding: 14 }]} />
       {(foods ?? []).map((f) => (
         <Pressable key={f.id} onPress={() => pick(f)}>
           <Card>
