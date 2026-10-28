@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Btn, Card, Chips, Screen, T, Title } from '../components/ui';
-import { NumPad } from '../components/NumPad';
+import { NumInput } from '../components/NumForm';
 import { toNumber } from '../lib/numpad';
 import { Activity, computeTargets, Goal, Sex } from '../lib/nutrition';
 import { saveProfile } from '../lib/repo';
@@ -47,7 +47,6 @@ export default function Onboarding() {
       scroll={false}
       footer={
         <>
-          {numeric && <NumPad value={val} onChange={setVal} />}
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {i > 0 && <Btn variant="ghost" label="<" style={{ width: 72 }} onPress={() => setStep(ORDER[i - 1])} />}
             <Btn style={{ flex: 1 }} label={step === 'result' ? 'ENTRER' : 'SUIVANT'} disabled={!ok} onPress={next} />
@@ -60,7 +59,7 @@ export default function Onboarding() {
       {numeric && (
         <>
           <Title>{step === 'age' ? 'AGE' : step === 'height' ? 'TAILLE' : 'POIDS ACTUEL'}</Title>
-          <Card><T size={56} color={C.gold}>{val || '0'} <T size={20} dim>{unit}</T></T></Card>
+          <Card><NumInput big autoFocus value={val} onChange={setVal} unit={unit} /></Card>
         </>
       )}
       {step === 'goal' && (<><Title>OBJECTIF</Title><Chips options={GOALS} value={goal} onChange={setGoal} color={C.orange} /></>)}

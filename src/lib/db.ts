@@ -11,7 +11,7 @@ export type Table = (typeof SYNCED)[number];
 const SCHEMA = `
 PRAGMA journal_mode = WAL;
 CREATE TABLE IF NOT EXISTS profile(id TEXT PRIMARY KEY, sex TEXT, age INTEGER, height_cm REAL, weight_kg REAL, goal TEXT, activity TEXT,
-  tdee INTEGER, kcal INTEGER, protein INTEGER, carbs INTEGER, fat INTEGER, keep_awake INTEGER DEFAULT 1, username TEXT, custom_targets INTEGER DEFAULT 0, updated_at INTEGER, deleted INTEGER DEFAULT 0);
+  tdee INTEGER, kcal INTEGER, protein INTEGER, carbs INTEGER, fat INTEGER, keep_awake INTEGER DEFAULT 1, username TEXT, custom_targets INTEGER DEFAULT 0, display_name TEXT, bio TEXT, avatar TEXT, avatar_color TEXT, title TEXT, updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE TABLE IF NOT EXISTS foods(id TEXT PRIMARY KEY, name TEXT, brand TEXT, barcode TEXT, kcal REAL, protein REAL, carbs REAL, fat REAL,
   serving_g REAL, custom INTEGER DEFAULT 0, updated_at INTEGER, deleted INTEGER DEFAULT 0);
 CREATE INDEX IF NOT EXISTS foods_barcode ON foods(barcode);
@@ -47,6 +47,11 @@ export function getDb() {
       for (const sql of [
         'ALTER TABLE profile ADD COLUMN username TEXT',
         'ALTER TABLE profile ADD COLUMN custom_targets INTEGER DEFAULT 0',
+        'ALTER TABLE profile ADD COLUMN display_name TEXT',
+        'ALTER TABLE profile ADD COLUMN bio TEXT',
+        'ALTER TABLE profile ADD COLUMN avatar TEXT',
+        'ALTER TABLE profile ADD COLUMN avatar_color TEXT',
+        'ALTER TABLE profile ADD COLUMN title TEXT',
         'ALTER TABLE programs ADD COLUMN fav INTEGER DEFAULT 0',
         'ALTER TABLE programs ADD COLUMN created_at INTEGER DEFAULT 0',
         'ALTER TABLE program_days ADD COLUMN fav INTEGER DEFAULT 0',

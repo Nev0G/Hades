@@ -1,13 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Vibration, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, Vibration, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as Haptics from 'expo-haptics';
 import { Btn, T } from '../../components/ui';
-import { NumPad } from '../../components/NumPad';
 import { RankBadge } from '../../components/RankBadge';
-import { addTo, toNumber } from '../../lib/numpad';
+import { addTo, sanitizeNumber, toNumber } from '../../lib/numpad';
 import { all, first, kvGet, remove, save } from '../../lib/db';
 import { getProfile, lastSets } from '../../lib/repo';
 import { bodyWeight, exerciseStats } from '../../lib/stats';
@@ -181,7 +180,7 @@ export default function RunSession() {
       <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top, padding: 16 }}>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <T size={14} dim>Repos</T>
-          <T size={96} color={left <= 5 ? C.red : C.blue}>{fmt(left)}</T>
+          <T size={96} color={left <= 5 ? C.red : C.accent}>{fmt(left)}</T>
           <T size={14} dim>{doneSets} / {totalSets} séries</T>
         </View>
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
@@ -193,30 +192,28 @@ export default function RunSession() {
   }
 
   const cur = sel ? items[sel.ei]?.rows[sel.ri] : null;
-  const val = sel && cur ? cur[sel.field] : '';
-  const setVal = (v: string) => sel && patch(sel.ei, sel.ri, { [sel.field]: v });
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: C.bg, paddingTop: insets.top }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 14, gap: 12 }}>
-        <T size={18} color={C.blue} style={{ flex: 1 }}>{elapsed}</T>
+        <T size={18} color={C.accent} style={{ flex: 1 }}>{elapsed}</T>
         <Pressable onPress={() => startRest(90, 'Repos')}><T size={22}>⏱</T></Pressable>
         <Pressable
           onPress={() => { if (confirm) finish(); else { setConfirm(true); setTimeout(() => setConfirm(false), 4000); } }}
-          style={{ backgroundColor: confirm ? C.green : C.blue, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 10 }}
+          style={{ backgroundColor: confirm ? C.green : C.accent, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 10 }}
         >
           <T size={15} color="#fff">{confirm ? 'Confirmer ?' : 'Terminer'}</T>
         </Pressable>
       </View>
       <View style={{ height: 4, backgroundColor: C.card2 }}>
-        <View style={{ height: '100%', width: `${totalSets ? (doneSets / totalSets) * 100 : 0}%`, backgroundColor: C.blue }} />
+        <View style={{ height: '100%', width: `${totalSets ? (doneSets / totalSets) * 100 : 0}%`, backgroundColor: C.accent }} />
       </View>
       {toast && (
         <View style={{ margin: 12, padding: 12, borderRadius: 12, backgroundColor: C.card, borderLeftWidth: 4, borderLeftColor: toast.color }}>
           <T size={15} color={toast.color}>{toast.text}</T>
         </View>
       )}
-      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
         {items.length === 0 && <T size={14} dim style={{ padding: 16 }}>Aucun exercice dans ce jour : utilise « Éditer » dans Train.</T>}
         {items.map((it, ei) => {
           const rk = rankFor(standardFor(it.name, it.equipment, it.compound === 1), best.current.get(it.exercise_id)?.e1rm ?? 0, body.current.kg, body.current.sex);
@@ -225,7 +222,7 @@ export default function RunSession() {
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, marginBottom: 6 }}>
                 <RankBadge tier={rk.tier} size={34} />
                 <View style={{ flex: 1 }}>
-                  <T size={18} color={C.blue}>{it.name}</T>
+                  <T size={18} color={C.accent}>{it.name}</T>
                   <T size={12} color={TIER_COLOR[rk.tier]}>{rk.tier}{rk.nextKg ? ` · prochain rang à ${rk.nextKg} kg` : ''}</T>
                 </View>
               </View>
@@ -241,11 +238,19 @@ export default function RunSession() {
                   {(['weight', 'reps'] as const).map((f) => {
                     const on = sel?.ei === ei && sel.ri === ri && sel.field === f;
                     return (
-                      <Pressable key={f} onPress={() => setSel({ ei, ri, field: f })} style={{ flex: 1, alignItems: 'center' }}>
-                        <View style={{ minWidth: 56, paddingVertical: 6, borderRadius: 10, alignItems: 'center', backgroundColor: on ? C.card2 : 'transparent', borderWidth: on ? 2 : 0, borderColor: C.blue }}>
-                          <T size={18}>{r[f] || '–'}</T>
-                        </View>
-                      </Pressable>
+                      <View key={f} style={{ flex: 1, alignItems: 'center' }}>
+                        <TextInput
+                          value={r[f]}
+                          onChangeText={(t) => patch(ei, ri, { [f]: sanitizeNumber(t) })}
+                          onFocus={() => setSel({ ei, ri, field: f })}
+                          keyboardType="decimal-pad"
+                          inputMode="decimal"
+                          selectTextOnFocus
+                          placeholder="–"
+                          placeholderTextColor={C.dim}
+                          style={{ width: 64, textAlign: 'center', paddingVertical: 6, paddingHorizontal: 0, borderRadius: 10, color: C.text, fontSize: 18, fontWeight: '700', backgroundColor: on ? C.card2 : 'transparent', borderWidth: on ? 2 : 0, borderColor: C.accent }}
+                        />
+                      </View>
                     );
                   })}
                   <View style={{ flex: 1, alignItems: 'center' }}>
@@ -271,11 +276,10 @@ export default function RunSession() {
             <Btn style={{ flex: 1 }} size="sm" variant="ghost" label={`+${inc.a} kg`} onPress={() => patch(sel.ei, sel.ri, { weight: addTo(cur?.weight ?? '', inc.a) })} />
             <Btn style={{ flex: 1 }} size="sm" variant="ghost" label={`+${inc.b} kg`} onPress={() => patch(sel.ei, sel.ri, { weight: addTo(cur?.weight ?? '', inc.b) })} />
             <Btn style={{ flex: 1 }} size="sm" variant="ghost" label={`+${inc.r} rep`} onPress={() => patch(sel.ei, sel.ri, { reps: addTo(cur?.reps ?? '', inc.r) })} />
-            <Btn style={{ width: 56 }} size="sm" label="OK" onPress={() => setSel(null)} />
+            <Btn style={{ width: 56 }} size="sm" label="OK" onPress={() => { Keyboard.dismiss(); setSel(null); }} />
           </View>
-          <NumPad value={val} onChange={setVal} />
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }

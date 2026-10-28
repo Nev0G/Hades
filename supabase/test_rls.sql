@@ -15,7 +15,7 @@ create or replace function pg_temp.expect_rows(q text, n int, why text) returns 
 \set C '''cccccccc-0000-4000-8000-000000000003'''
 
 -- Profils publics
-select pg_temp.as_user(:A); insert into public_profiles(username, xp) values ('alice', 500);
+select pg_temp.as_user(:A); insert into public_profiles(username, xp, display_name, bio, avatar, avatar_color, title) values ('alice', 500, 'Alice', 'Je soulève', '💪', '#E5383B', 'Rat de salle');
 select pg_temp.as_user(:B); insert into public_profiles(username, xp) values ('bob', 300);
 select pg_temp.as_user(:C); insert into public_profiles(username, xp) values ('carol', 100);
 select pg_temp.expect_fail($$insert into public_profiles(user_id, username) values ('aaaaaaaa-0000-4000-8000-000000000001','alice2')$$, 'doublon user_id');
@@ -23,6 +23,7 @@ select pg_temp.expect_fail($$insert into public_profiles(user_id, username) valu
 select pg_temp.expect_fail($$insert into public_profiles(username) values ('alice')$$, 'pseudo unique');
 select pg_temp.expect_fail($$insert into public_profiles(username) values ('X')$$, 'format du pseudo');
 select pg_temp.expect_rows('select 1 from public_profiles', 3, 'classement lisible par tous');
+select pg_temp.expect_rows($$select 1 from public_profiles where username='alice' and bio='Je soulève' and avatar='💪' and title='Rat de salle'$$, 1, 'profil personnalisé lisible par tous');
 update public_profiles set xp = 9999 where username = 'alice';   -- C modifie le profil d Alice : 0 ligne
 select pg_temp.as_user(:A); select pg_temp.expect_rows($$select 1 from public_profiles where username='alice' and xp=500$$, 1, 'profil d autrui intact');
 

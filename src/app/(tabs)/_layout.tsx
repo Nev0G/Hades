@@ -9,7 +9,7 @@ export default function TabsLayout() {
         headerShown: false,
         sceneStyle: { backgroundColor: C.bg },
         tabBarStyle: { backgroundColor: C.card, borderTopWidth: 0, height: 62 },
-        tabBarActiveTintColor: C.blue,
+        tabBarActiveTintColor: C.accent,
         tabBarInactiveTintColor: C.dim,
         tabBarLabelStyle: { fontWeight: '700', fontSize: 10, letterSpacing: 0, marginHorizontal: 0 },
         tabBarIconStyle: { display: 'none' },

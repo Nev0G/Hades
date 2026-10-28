@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { TextInput, View, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Btn, Card, Chips, Field, Screen, T, Title } from '../components/ui';
-import { NumPad } from '../components/NumPad';
-import { NumForm } from '../components/NumForm';
+import { NumForm, NumInput } from '../components/NumForm';
 import { addTo, toNumber } from '../lib/numpad';
 import { first, save } from '../lib/db';
 import { Food, Meal, MEALS, recentFoods, searchFoods } from '../lib/repo';
@@ -78,7 +77,6 @@ export default function AddFood() {
             <View style={{ flexDirection: 'row', gap: 6 }}>
               {[-50, -10, 10, 50].map((d) => (<Btn key={d} size="sm" variant="ghost" style={{ flex: 1 }} label={`${d > 0 ? '+' : ''}${d}`} onPress={() => setGrams(addTo(grams, d))} />))}
             </View>
-            <NumPad value={grams} onChange={setGrams} />
             <Btn label={`AJOUTER · ${m.kcal} KCAL`} onPress={addEntry} />
           </>
         }
@@ -87,7 +85,7 @@ export default function AddFood() {
         <Title>{food.name}</Title>
         <Chips options={MEALS} value={meal} onChange={setMeal} color={C.orange} />
         <Card accent={C.gold}>
-          <T size={56} color={C.gold}>{grams || '0'}<T size={18} dim> G</T></T>
+          <NumInput big autoFocus value={grams} onChange={setGrams} unit="g" />
           <T size={13}>{m.kcal} KCAL · P {m.protein} · G {m.carbs} · L {m.fat}</T>
         </Card>
       </Screen>
@@ -147,7 +145,7 @@ export default function AddFood() {
       }
     >
       <Title>Ajouter · {LABELS[meal]}</Title>
-      <Chips options={MEALS} value={meal} onChange={setMeal} color={C.blue} />
+      <Chips options={MEALS} value={meal} onChange={setMeal} color={C.accent} />
       <Chips options={['Aliments', 'Repas', 'Recettes'] as const} value={tab} onChange={(t) => { setTab(t); reloadTpls(); }} color={C.orange} />
 
       {tab !== 'Aliments' && (
@@ -162,7 +160,7 @@ export default function AddFood() {
                   <T size={15}>{t.name}</T>
                   <T size={12} dim>{pp.kcal} kcal{t.kind === 'recipe' ? ' / portion' : ''} · P {pp.protein} · G {pp.carbs} · L {pp.fat} · {t.items.length} aliments</T>
                 </Pressable>
-                <Pressable accessibilityLabel={`Ajouter ${t.name}`} onPress={() => addTpl(t)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' }}>
+                <Pressable accessibilityLabel={`Ajouter ${t.name}`} onPress={() => addTpl(t)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
                   <T size={22} color="#fff">+</T>
                 </Pressable>
               </View>
@@ -182,7 +180,7 @@ export default function AddFood() {
                 <T size={15}>{f.name}</T>
                 <T size={12} dim>{f.brand ? `${f.brand} · ` : ''}{Math.round(f.kcal)} kcal/100 g · P {f.protein} · G {f.carbs} · L {f.fat}</T>
               </Pressable>
-              <Pressable onPress={() => quickAdd(f)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' }}>
+              <Pressable onPress={() => quickAdd(f)} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
                 <T size={22} color="#fff">+</T>
               </Pressable>
             </View>

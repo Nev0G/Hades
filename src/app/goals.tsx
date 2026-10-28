@@ -3,7 +3,6 @@ import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Btn, Card, Chips, Screen, T, Title } from '../components/ui';
 import { NumForm } from '../components/NumForm';
-import { NumPad } from '../components/NumPad';
 import { getProfile, resetTargets, saveProfile, saveTargets } from '../lib/repo';
 import { getGoals, setGoals, balanceCarbs, macroKcal, splitFromPercent } from '../lib/goals';
 import { toNumber } from '../lib/numpad';
@@ -27,7 +26,6 @@ export default function GoalsScreen() {
   const [activity, setActivity] = useState<Activity>('MODERE');
   const [tdee, setTdee] = useState(0);
   const [msg, setMsg] = useState('');
-  const [act, setAct] = useState<{ g: 't' | 'body' | 'other'; k: string } | null>({ g: 't', k: 'kcal' });
 
   const load = async () => {
     const p = await getProfile();
@@ -58,9 +56,6 @@ export default function GoalsScreen() {
 
   return (
     <Screen footer={<>
-      {act && <NumPad value={(act.g === 't' ? t : act.g === 'body' ? body : other)[act.k] ?? ''} onChange={(v) => {
-        if (act.g === 't') editT({ ...t, [act.k]: v }); else if (act.g === 'body') setBody({ ...body, [act.k]: v }); else setOther({ ...other, [act.k]: v });
-      }} />}
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <Btn style={{ flex: 2 }} label="Enregistrer" onPress={save} />
         <Btn style={{ flex: 1 }} variant="ghost" label="Retour" onPress={() => router.back()} />
@@ -72,7 +67,7 @@ export default function GoalsScreen() {
       <Card>
         <T size={18}>Calories et macros</T>
         <T size={13} dim>{custom ? 'Valeurs personnalisées' : 'Calcul automatique (TDEE + objectif)'}{tdee ? ` · TDEE ${tdee} kcal` : ''}</T>
-        <NumForm fields={[{ key: 'kcal', label: 'Calories', unit: 'kcal' }, { key: 'p', label: 'Protéines', unit: 'g' }, { key: 'c', label: 'Glucides', unit: 'g' }, { key: 'f', label: 'Lipides', unit: 'g' }]} values={t} onChange={editT} activeKey={act?.g === 't' ? act.k : null} onActivate={(k) => setAct({ g: 't', k })} />
+        <NumForm fields={[{ key: 'kcal', label: 'Calories', unit: 'kcal' }, { key: 'p', label: 'Protéines', unit: 'g' }, { key: 'c', label: 'Glucides', unit: 'g' }, { key: 'f', label: 'Lipides', unit: 'g' }]} values={t} onChange={editT} />
         <T size={13} color={Math.abs(gap) <= 25 ? C.green : C.orange}>Macros = {total} kcal ({gap >= 0 ? '+' : ''}{gap} vs objectif)</T>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Btn style={{ flex: 1 }} size="sm" variant="ghost" label="Équilibrer les glucides" onPress={() => editT({ ...t, c: String(balanceCarbs(kcal, p, f)) })} />
@@ -95,13 +90,13 @@ export default function GoalsScreen() {
         <Chips options={ACTS} value={activity} onChange={setActivity} color={C.orange} />
         <T size={12} dim>Sexe</T>
         <Chips options={['M', 'F'] as const} value={sex} onChange={setSex} />
-        <NumForm fields={[{ key: 'weight', label: 'Poids', unit: 'kg' }, { key: 'height', label: 'Taille', unit: 'cm' }, { key: 'age', label: 'Âge', unit: 'ans' }]} values={body} onChange={setBody} activeKey={act?.g === 'body' ? act.k : null} onActivate={(k) => setAct({ g: 'body', k })} />
+        <NumForm fields={[{ key: 'weight', label: 'Poids', unit: 'kg' }, { key: 'height', label: 'Taille', unit: 'cm' }, { key: 'age', label: 'Âge', unit: 'ans' }]} values={body} onChange={setBody} />
         {!custom && <T size={12} dim>Les calories et macros se recalculent automatiquement avec ces valeurs.</T>}
       </Card>
 
       <Card>
         <T size={18}>Autres objectifs</T>
-        <NumForm fields={[{ key: 'water', label: 'Eau / jour', unit: 'verres' }, { key: 'sessions', label: 'Séances / semaine' }, { key: 'target', label: 'Poids cible', unit: 'kg' }]} values={other} onChange={setOther} activeKey={act?.g === 'other' ? act.k : null} onActivate={(k) => setAct({ g: 'other', k })} />
+        <NumForm fields={[{ key: 'water', label: 'Eau / jour', unit: 'verres' }, { key: 'sessions', label: 'Séances / semaine' }, { key: 'target', label: 'Poids cible', unit: 'kg' }]} values={other} onChange={setOther} />
       </Card>
     </Screen>
   );

@@ -4,7 +4,7 @@ import Svg, { Circle, Line, Polygon, Polyline, Text as SText } from 'react-nativ
 import { C } from '../lib/theme';
 
 /** Graphique wireframe : grille matricielle + ligne brute, sans lissage. */
-export function WireChart({ data, width = 320, height = 160, color = C.blue, unit = '' }: { data: number[]; width?: number; height?: number; color?: string; unit?: string }) {
+export function WireChart({ data, width = 320, height = 160, color = C.accent, unit = '' }: { data: number[]; width?: number; height?: number; color?: string; unit?: string }) {
   const padL = 40, padB = 8, padT = 8;
   if (data.length === 0) return <View style={{ height: 40 }} />;
   const min = Math.min(...data), max = Math.max(...data);

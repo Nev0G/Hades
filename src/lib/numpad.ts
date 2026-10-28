@@ -1,16 +1,13 @@
-/** Logique pure du pavé numérique sur-mesure. */
-export type PadKey = '0'|'1'|'2'|'3'|'4'|'5'|'6'|'7'|'8'|'9'|'.'|'DEL'|'CLR';
-
-export function applyKey(value: string, key: PadKey, maxLen = 7): string {
-  if (key === 'CLR') return '';
-  if (key === 'DEL') return value.slice(0, -1);
-  if (key === '.') {
-    if (value.includes('.')) return value;
-    return value === '' ? '0.' : value + '.';
+/** Nettoie une saisie numérique du clavier natif : chiffres, une seule virgule/point (normalisé en point). */
+export function sanitizeNumber(raw: string, maxLen = 7): string {
+  let out = '';
+  let dot = false;
+  for (const ch of raw.replace(/,/g, '.')) {
+    if (ch >= '0' && ch <= '9') out += ch;
+    else if (ch === '.' && !dot) { dot = true; out += out === '' ? '0.' : '.'; }
+    if (out.length >= maxLen) break;
   }
-  if (value.length >= maxLen) return value;
-  if (value === '0') return key;
-  return value + key;
+  return out;
 }
 
 export function toNumber(value: string): number {

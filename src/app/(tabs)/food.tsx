@@ -65,7 +65,7 @@ export default function Journal() {
           </View>
         </View>
         <View style={{ flexDirection: 'row', gap: 12 }}>
-          {[['Glucides', sum.c, p.carbs, C.orange], ['Protéines', sum.p, p.protein, C.blue], ['Lipides', sum.f, p.fat, C.gold]].map(([l, v, m, c]) => (
+          {[['Glucides', sum.c, p.carbs, C.orange], ['Protéines', sum.p, p.protein, C.accent], ['Lipides', sum.f, p.fat, C.gold]].map(([l, v, m, c]) => (
             <View key={String(l)} style={{ flex: 1 }}>
               <Bar stacked label={String(l)} value={Number(v)} max={Number(m)} color={String(c)} unit="g" />
             </View>
@@ -90,7 +90,7 @@ export default function Journal() {
                   <T size={12} dim>{list.length ? list.map((e) => e.name).join(', ').slice(0, 42) : 'Rien de noté'}</T>
                 </View>
                 <Pressable onPress={() => router.push({ pathname: '/add-food', params: { meal, date } })}
-                  style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.blue, alignItems: 'center', justifyContent: 'center' }}>
+                  style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center' }}>
                   <T size={26} color="#fff">+</T>
                 </Pressable>
               </Pressable>
@@ -125,7 +125,7 @@ export default function Journal() {
         <T size={18}>Eau</T>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Btn size="sm" variant="ghost" label="-" onPress={async () => { await setWater(date, water.glasses - 1); reload(); }} />
-          <T size={30} color={C.blue} style={{ flex: 1, textAlign: 'center' }}>{water.glasses} <T size={12} dim>verres · {(water.glasses * GLASSES_ML) / 1000} L</T></T>
+          <T size={30} color={C.accent} style={{ flex: 1, textAlign: 'center' }}>{water.glasses} <T size={12} dim>verres · {(water.glasses * GLASSES_ML) / 1000} L</T></T>
           <Btn size="sm" label="+ Verre" onPress={async () => { await setWater(date, water.glasses + 1); reload(); }} />
         </View>
       </Card>

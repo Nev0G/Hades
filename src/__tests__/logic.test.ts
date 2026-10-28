@@ -1,6 +1,6 @@
 import { computeTargets, tdee, scaleFood, recipePer100 } from '../lib/nutrition';
 import { estimate1RM, best1RM, roundToPlate } from '../lib/strength';
-import { applyKey, addTo, toNumber } from '../lib/numpad';
+import { sanitizeNumber, addTo, toNumber } from '../lib/numpad';
 
 const base = { sex: 'M' as const, age: 30, heightCm: 180, weightKg: 80, goal: 'MAINTIEN' as const, activity: 'MODERE' as const };
 
@@ -42,12 +42,15 @@ test('1RM', () => {
   expect(roundToPlate(101)).toBe(100);
 });
 
-test('pavé numérique', () => {
-  expect(applyKey('', '.')).toBe('0.');
-  expect(applyKey('0.5', '.')).toBe('0.5');
-  expect(applyKey('0', '7')).toBe('7');
-  expect(applyKey('12', 'DEL')).toBe('1');
-  expect(applyKey('1234567', '1')).toBe('1234567');
+test('saisie numérique (clavier natif)', () => {
+  expect(sanitizeNumber('12')).toBe('12');
+  expect(sanitizeNumber('.')).toBe('0.');
+  expect(sanitizeNumber('2,5')).toBe('2.5');
+  expect(sanitizeNumber('1.2.3')).toBe('1.23');
+  expect(sanitizeNumber('ab7c')).toBe('7');
+  expect(sanitizeNumber('-5')).toBe('5');
+  expect(sanitizeNumber('12345678901')).toBe('1234567');
+  expect(sanitizeNumber('')).toBe('');
   expect(addTo('100', 2.5)).toBe('102.5');
   expect(toNumber('')).toBe(0);
 });

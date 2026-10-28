@@ -1,9 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { View } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { Share, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { Pressable } from 'react-native';
 import { Btn, Card, Chips, Field, Screen, T } from '../../components/ui';
 import { RankBadge } from '../../components/RankBadge';
-import { cloudEnabled, getSession } from '../../lib/auth';
+import { Avatar } from '../../components/Avatar';
+import { cloudEnabled, getSession, signOut } from '../../lib/auth';
 import { getProfile } from '../../lib/repo';
 import { save } from '../../lib/db';
 import { isUsername, normalizeUsername } from '../../lib/validate';
@@ -15,21 +17,23 @@ import { C } from '../../lib/theme';
 const TABS = ['Classement', 'Amis', 'Défis'] as const;
 const METRIC_LABEL: Record<Metric, string> = { xp: 'XP gagnés', volume: 'Volume (kg)', sessions: 'Séances' };
 
-function Row({ p, rank, me, right }: { p: S.PublicProfile; rank?: number; me?: boolean; right?: React.ReactNode }) {
+function Row({ p, rank, me, right, onPress }: { p: S.PublicProfile; rank?: number; me?: boolean; right?: React.ReactNode; onPress?: () => void }) {
+  const tier = TIERS[p.rank_index] ?? 'WOOD';
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 }}>
+    <Pressable onPress={onPress} disabled={!onPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 6 }}>
       {rank !== undefined && <T size={16} color={rank < 3 ? C.gold : C.dim} style={{ width: 26 }}>{rank + 1}</T>}
-      <RankBadge tier={TIERS[p.rank_index] ?? 'WOOD'} size={34} />
+      <Avatar emoji={p.avatar} color={p.avatar_color} name={p.display_name || p.username} size={40} />
       <View style={{ flex: 1 }}>
-        <T size={15} color={me ? C.blue : C.text}>{p.username}{me ? ' (toi)' : ''}</T>
-        <T size={12} color={TIER_COLOR[TIERS[p.rank_index] ?? 'WOOD']}>{TIERS[p.rank_index] ?? 'WOOD'} · niv. {p.level}</T>
+        <T size={15} color={me ? C.accent : C.text}>{p.display_name || p.username}{me ? ' (toi)' : ''}</T>
+        <T size={12} color={TIER_COLOR[tier]}>{tier} · niv. {p.level}{p.title ? ` · ${p.title}` : ''}</T>
       </View>
       {right ?? <T size={15}>{p.xp} XP</T>}
-    </View>
+    </Pressable>
   );
 }
 
 export default function Social() {
+  const router = useRouter();
   const [tab, setTab] = useState<(typeof TABS)[number]>('Classement');
   const [state, setState] = useState<'loading' | 'off' | 'nouser' | 'ready'>('loading');
   const [username, setUsername] = useState<string | null>(null);
@@ -91,8 +95,10 @@ export default function Social() {
       <Screen>
         <T size={26}>Social</T>
         <Card>
-          <T size={16}>Classements, amis et défis</T>
-          <T size={13} dim>Cette partie utilise un compte en ligne (Supabase). {cloudEnabled ? 'Déconnecte-toi puis crée un compte en ligne.' : 'Aucun serveur n’est configuré : ajoute EXPO_PUBLIC_SUPABASE_URL et EXPO_PUBLIC_SUPABASE_ANON_KEY (voir le README), puis relance l’app.'}</T>
+          <T size={16}>Amis, classements et défis</T>
+          <T size={13} dim>Cette partie utilise un compte en ligne (Supabase). {cloudEnabled ? 'Ton compte actuel est local (sur ce téléphone uniquement). Crée un compte en ligne pour ajouter des amis.' : 'Aucun serveur n’est configuré : ajoute EXPO_PUBLIC_SUPABASE_URL et EXPO_PUBLIC_SUPABASE_ANON_KEY dans .env (voir le README), puis relance l’app avec --clear.'}</T>
+          {cloudEnabled && <Btn label="Créer un compte en ligne" onPress={async () => { await signOut(); router.replace('/login'); }} />}
+          {cloudEnabled && <T size={11} dim>Tes données locales restent sur le téléphone ; reconnecte-toi avec le nouveau compte pour les synchroniser.</T>}
         </Card>
       </Screen>
     );
@@ -118,6 +124,11 @@ export default function Social() {
     <Screen>
       <T size={26}>Social</T>
       <Chips options={TABS} value={tab} onChange={(t) => { setTab(t); setOpen(null); }} />
+      {ov && ov.incoming.length > 0 && tab !== 'Amis' && (
+        <Pressable onPress={() => setTab('Amis')} style={{ backgroundColor: C.card, borderRadius: 14, padding: 12, borderLeftWidth: 4, borderLeftColor: C.accent }}>
+          <T size={14}>🔔 {ov.incoming.length} demande{ov.incoming.length > 1 ? 's' : ''} d'ami en attente</T>
+        </Pressable>
+      )}
       {err ? <T size={13} color={C.red}>{err}</T> : null}
       {info ? <T size={13} color={C.green}>{info}</T> : null}
 
@@ -127,13 +138,14 @@ export default function Social() {
           <T size={12} dim>{kind === 'global' ? 'Tous les joueurs · XP total' : kind === 'week' ? 'Tous les joueurs · XP des 7 derniers jours' : 'Toi et tes amis'}</T>
           <Card>
             {board.length === 0 && <T size={13} dim>Aucun joueur pour l’instant.</T>}
-            {board.map((p, i) => <Row key={p.user_id} p={p} rank={i} me={p.user_id === me} right={<T size={15}>{kind === 'week' ? p.week_xp : p.xp} XP</T>} />)}
+            {board.map((p, i) => <Row key={p.user_id} p={p} rank={i} me={p.user_id === me} onPress={p.user_id === me ? undefined : () => router.push({ pathname: '/friend/[id]', params: { id: p.user_id } })} right={<T size={15}>{kind === 'week' ? p.week_xp : p.xp} XP</T>} />)}
           </Card>
         </>
       )}
 
       {tab === 'Amis' && (
         <>
+          <Btn variant="ghost" label="Inviter un ami (partager mon pseudo)" onPress={() => Share.share({ message: `Rejoins-moi sur HADES ! Ajoute-moi avec mon pseudo : @${username}` }).catch(() => {})} />
           <Field label="Chercher un pseudo" value={q} onChangeText={(v) => { setQ(v); guard(async () => setFound(await S.searchUsers(v))); }} placeholder="pseudo" />
           {found.map((p) => (
             <Card key={p.user_id} style={{ padding: 12 }}>
@@ -156,7 +168,7 @@ export default function Social() {
             <T size={16}>Mes amis</T>
             {ov?.friends.length === 0 && <T size={13} dim>Pas encore d’amis : cherche leur pseudo ci-dessus.</T>}
             {ov?.friends.map(({ f, profile }) => profile && (
-              <Row key={f.id} p={profile} right={<T size={13} color={C.red} onPress={() => guard(async () => { await S.removeFriendship(f.id); await refresh(); })}>Retirer</T>} />
+              <Row key={f.id} p={profile} onPress={() => router.push({ pathname: '/friend/[id]', params: { id: profile.user_id } })} right={<T size={13} dim>Voir ›</T>} />
             ))}
             {ov && ov.outgoing.length > 0 && <T size={12} dim>En attente : {ov.outgoing.map((o) => o.profile?.username).join(', ')}</T>}
           </Card>
@@ -210,7 +222,7 @@ export default function Social() {
             {open.members.map((m, i) => (
               <View key={m.user_id} style={{ flexDirection: 'row', gap: 10, paddingVertical: 6 }}>
                 <T size={16} color={i === 0 ? C.gold : C.dim} style={{ width: 26 }}>{i + 1}</T>
-                <T size={15} color={m.user_id === me ? C.blue : C.text} style={{ flex: 1 }}>{m.username}</T>
+                <T size={15} color={m.user_id === me ? C.accent : C.text} style={{ flex: 1 }}>{m.username}</T>
                 <T size={15}>{Math.round(m.score)}</T>
               </View>
             ))}

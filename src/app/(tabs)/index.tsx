@@ -6,6 +6,7 @@ import { Card, Screen, T } from '../../components/ui';
 import { RankBadge } from '../../components/RankBadge';
 import { MuscleMap } from '../../components/MuscleMap';
 import { Ring } from '../../components/Gauge';
+import { Avatar } from '../../components/Avatar';
 import { WireChart } from '../../components/WireChart';
 import { Tile } from '../../components/RoutineList';
 import { useLoad } from '../../lib/hooks';
@@ -56,8 +57,9 @@ export default function Dashboard() {
   return (
     <Screen>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <Pressable accessibilityLabel="Mon profil" onPress={() => router.push('/(tabs)/profile')}><Avatar emoji={d.p.avatar} color={d.p.avatar_color} name={d.p.display_name || d.p.username} size={48} /></Pressable>
         <View style={{ flex: 1 }}>
-          <T size={26}>{d.p.username ? `Salut ${d.p.username}` : 'Dashboard'}</T>
+          <T size={26}>{d.p.display_name || d.p.username ? `Salut ${d.p.display_name || d.p.username}` : 'Dashboard'}</T>
           <T size={13} dim>Niveau {d.lvl.level} · {d.lvl.xp} XP{d.streak > 1 ? ` · 🔥 ${d.streak} semaines de suite` : ''}</T>
         </View>
         <Pressable accessibilityLabel="Mes objectifs" onPress={() => router.push('/goals')} style={{ padding: 8 }}><T size={22}>⚙</T></Pressable>
@@ -71,8 +73,8 @@ export default function Dashboard() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
           {[
             { label: 'Calories', v: d.kcal, max: d.p.kcal, text: `${d.kcal}`, sub: `/ ${d.p.kcal}`, color: C.orange, go: '/(tabs)/food' },
-            { label: 'Protéines', v: d.prot, max: d.p.protein, text: `${d.prot}`, sub: `/ ${d.p.protein} g`, color: C.blue, go: '/(tabs)/food' },
-            { label: 'Eau', v: d.water, max: d.goals.water, text: `${d.water}`, sub: `/ ${d.goals.water}`, color: '#4FC3F7', go: '/(tabs)/food' },
+            { label: 'Protéines', v: d.prot, max: d.p.protein, text: `${d.prot}`, sub: `/ ${d.p.protein} g`, color: C.accent, go: '/(tabs)/food' },
+            { label: 'Eau', v: d.water, max: d.goals.water, text: `${d.water}`, sub: `/ ${d.goals.water}`, color: '#FFB4A2', go: '/(tabs)/food' },
             { label: 'Séances', v: d.doneWeek, max: d.goals.sessionsPerWeek, text: `${d.doneWeek}`, sub: `/ ${d.goals.sessionsPerWeek} sem.`, color: C.green, go: '/(tabs)/train' },
           ].map((g) => (
             <Pressable key={g.label} onPress={() => router.push(g.go as any)} style={{ alignItems: 'center', gap: 4 }}>
@@ -93,7 +95,7 @@ export default function Dashboard() {
               <T size={18}>{next.r.name}</T>
               <T size={13} color={next.ready >= 70 ? C.green : C.orange}>Muscles prêts à {next.ready} %</T>
             </View>
-            <T size={26} color={C.blue}>▶</T>
+            <T size={26} color={C.accent}>▶</T>
           </Card>
         </Pressable>
       )}
@@ -103,7 +105,7 @@ export default function Dashboard() {
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
           {d.week.map((w, i) => (
             <View key={i} style={{ alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: w.done ? C.green : C.card2, borderWidth: w.today ? 2 : 0, borderColor: C.blue }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: w.done ? C.green : C.card2, borderWidth: w.today ? 2 : 0, borderColor: C.accent }}>
                 <T size={11} color={w.done ? '#000' : C.dim}>{w.done ? (w.mins ? `${w.mins}m` : '✓') : '✕'}</T>
               </View>
               <T size={12} dim>{w.label}</T>
@@ -142,7 +144,7 @@ export default function Dashboard() {
         <Svg width={cw} height={110}>
           {d.vol.map((v, i) => {
             const bw = cw / d.vol.length, h = Math.max(2, (v.volume / maxVol) * 90);
-            return <Rect key={i} x={i * bw + 6} y={100 - h} width={bw - 12} height={h} rx={4} fill={i === d.vol.length - 1 ? C.blue : C.card2} />;
+            return <Rect key={i} x={i * bw + 6} y={100 - h} width={bw - 12} height={h} rx={4} fill={i === d.vol.length - 1 ? C.accent : C.card2} />;
           })}
         </Svg>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -191,7 +193,7 @@ export default function Dashboard() {
             <View style={{ flex: 1 }}><T size={14}>{e.name}</T><T size={12} color={TIER_COLOR[e.rank.tier]}>{e.rank.tier} · 1RM {e.e1rm} kg</T></View>
           </View>
         ))}
-        <T size={12} color={C.blue} onPress={() => router.push('/(tabs)/stats')}>Voir tous les rangs et statistiques →</T>
+        <T size={12} color={C.accent} onPress={() => router.push('/(tabs)/stats')}>Voir tous les rangs et statistiques →</T>
       </Card>
     </Screen>
   );

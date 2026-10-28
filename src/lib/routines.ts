@@ -23,7 +23,7 @@ export function sortRoutines<T extends { name: string; created_at: number; lastD
 }
 
 /** Couleur stable d'une routine (tuile à initiales). */
-const TILES = ['#E67E22', '#5B5675', '#1E9A84', '#B98B86', '#4C7BD9', '#C0506B', '#7A9A3A', '#A0722D'];
+const TILES = ['#E67E22', '#5B5675', '#1E9A84', '#B98B86', '#8E5BD9', '#C0506B', '#7A9A3A', '#A0722D'];
 export const tileColor = (name: string) => TILES[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % TILES.length];
 export const initials = (name: string) => (name.trim().slice(0, 2) || '?').replace(/^./, (c) => c.toUpperCase());
 

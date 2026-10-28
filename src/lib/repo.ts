@@ -4,7 +4,11 @@ import { computeTargets, Activity, Goal, Sex } from './nutrition';
 export type Profile = {
   id: string; sex: Sex; age: number; height_cm: number; weight_kg: number; goal: Goal; activity: Activity;
   tdee: number; kcal: number; protein: number; carbs: number; fat: number; keep_awake: number; username?: string | null; custom_targets?: number;
+  display_name?: string | null; bio?: string | null; avatar?: string | null; avatar_color?: string | null; title?: string | null;
 };
+
+export const PROFILE_CUSTOM_KEYS = ['username', 'display_name', 'bio', 'avatar', 'avatar_color', 'title'] as const;
+export type ProfileCustom = Partial<Record<(typeof PROFILE_CUSTOM_KEYS)[number], string | null>>;
 export const MEALS = ['PETIT-DEJEUNER', 'DEJEUNER', 'DINER', 'COLLATIONS'] as const;
 export type Meal = (typeof MEALS)[number];
 
@@ -20,7 +24,8 @@ export async function saveProfile(p: { sex: Sex; age: number; height_cm: number;
   // Objectifs personnalisés (calories / macros saisis à la main) : conservés tant qu'on ne repasse pas en automatique.
   const custom = existing?.custom_targets ? existing : null;
   await save('profile', {
-    id, username, ...p, tdee: t.tdee,
+    id, username, display_name: existing?.display_name ?? null, bio: existing?.bio ?? null, avatar: existing?.avatar ?? null,
+    avatar_color: existing?.avatar_color ?? null, title: existing?.title ?? null, ...p, tdee: t.tdee,
     kcal: custom?.kcal ?? t.kcal, protein: custom?.protein ?? t.protein, carbs: custom?.carbs ?? t.carbs, fat: custom?.fat ?? t.fat,
     custom_targets: custom ? 1 : 0, keep_awake: existing?.keep_awake ?? keepAwake,
   });
@@ -81,3 +86,9 @@ export const recentFoods = () =>
     `SELECT * FROM foods WHERE deleted=0 ORDER BY
        CASE WHEN name IN (SELECT name FROM food_entries WHERE deleted=0 ORDER BY updated_at DESC LIMIT 30) THEN 0 ELSE 1 END,
        custom DESC, name LIMIT 80`);
+
+/** Enregistre les champs de personnalisation du profil (pseudo, nom, bio, avatar, couleur, titre). */
+export async function saveProfileCustom(patch: ProfileCustom) {
+  const p = await getProfile();
+  if (p) await save('profile', { ...p, ...patch });
+}

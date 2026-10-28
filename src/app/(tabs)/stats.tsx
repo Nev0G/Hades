@@ -5,7 +5,7 @@ import { Btn, Card, Screen, T, Title } from '../../components/ui';
 import { RankBadge } from '../../components/RankBadge';
 import { exerciseStats, muscleRanks } from '../../lib/stats';
 import { TIER_COLOR } from '../../lib/rank';
-import { NumPad } from '../../components/NumPad';
+import { NumInput } from '../../components/NumForm';
 import { WireChart } from '../../components/WireChart';
 import { all, first, save, today } from '../../lib/db';
 import { useLoad } from '../../lib/hooks';
@@ -61,8 +61,8 @@ export default function Stats() {
       <Card>
         <T size={18}>Poids de corps</T>
         <WireChart data={(d?.weights ?? []).map((w) => w.weight_kg)} width={cw} unit="KG" />
-        <T size={32} color={C.gold}>{kg || (d?.weights.at(-1)?.weight_kg ?? 0)} <T size={12} dim>KG</T></T>
-        <NumPad value={kg} onChange={setKg} />
+        <T size={12} dim>Nouveau poids (dernier : {d?.weights.at(-1)?.weight_kg ?? '—'} kg)</T>
+        <NumInput big value={kg} onChange={setKg} unit="kg" placeholder={String(d?.weights.at(-1)?.weight_kg ?? 0)} />
         <Btn variant="gold" label="ENREGISTRER LE POIDS" disabled={!toNumber(kg)} onPress={async () => { await logWeight(toNumber(kg)); setKg(''); reload(); }} />
       </Card>
 

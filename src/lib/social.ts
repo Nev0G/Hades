@@ -1,7 +1,11 @@
 import { cloudEnabled, decodeJwt, getSession, getValidToken, supabase } from './auth';
 import { Metric, challengeScore, publicSummary } from './stats';
+import { getProfile } from './repo';
 
-export type PublicProfile = { user_id: string; username: string; xp: number; level: number; week_xp: number; rank_index: number; rank_score: number; muscle_ranks: Record<string, number> };
+export type PublicProfile = {
+  user_id: string; username: string; xp: number; level: number; week_xp: number; rank_index: number; rank_score: number; muscle_ranks: Record<string, number>;
+  display_name?: string | null; bio?: string | null; avatar?: string | null; avatar_color?: string | null; title?: string | null;
+};
 export type Friendship = { id: string; requester: string; addressee: string; status: 'pending' | 'accepted' };
 export type Challenge = { id: string; creator: string; title: string; metric: Metric; start_at: number; end_at: number; is_public: boolean; code: string };
 export type Member = { challenge_id: string; user_id: string; username: string; score: number };
@@ -45,12 +49,18 @@ const enc = encodeURIComponent;
 export async function pushStats(username: string): Promise<void> {
   const { me } = await ctx();
   const sum = await publicSummary();
-  await rest('public_profiles?on_conflict=user_id', { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal', body: { user_id: me, username, ...sum, updated_at: Date.now() } });
+  const lp = await getProfile();
+  const look = { display_name: lp?.display_name ?? null, bio: lp?.bio ?? null, avatar: lp?.avatar ?? null, avatar_color: lp?.avatar_color ?? null, title: lp?.title ?? null };
+  await rest('public_profiles?on_conflict=user_id', { method: 'POST', prefer: 'resolution=merge-duplicates,return=minimal', body: { user_id: me, username, ...look, ...sum, updated_at: Date.now() } });
   for (const c of await myChallenges()) {
     if (c.end_at < Date.now()) continue;
     const score = await challengeScore(c.metric, c.start_at, Math.min(Date.now(), c.end_at));
     await rest(`challenge_members?challenge_id=eq.${c.id}&user_id=eq.${me}`, { method: 'PATCH', prefer: 'return=minimal', body: { score, updated_at: Date.now() } });
   }
+}
+
+export async function profileById(id: string): Promise<PublicProfile | null> {
+  return (await rest<PublicProfile[]>(`public_profiles?user_id=eq.${id}&select=*`))[0] ?? null;
 }
 
 export async function myProfile(): Promise<PublicProfile | null> {

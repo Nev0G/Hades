@@ -41,7 +41,7 @@ export function Btn({
   label, onPress, variant = 'red', style, disabled, haptic = true, size = 'lg',
 }: { label: string; onPress: () => void; variant?: 'red' | 'gold' | 'orange' | 'ghost'; style?: ViewStyle; disabled?: boolean; haptic?: boolean; size?: 'lg' | 'sm' }) {
   // 'red' = action principale (bleu) ; les autres variantes gardent leur couleur.
-  const bg = variant === 'ghost' ? C.card2 : variant === 'gold' ? C.gold : variant === 'orange' ? C.orange : C.blue;
+  const bg = variant === 'ghost' ? C.card2 : variant === 'gold' ? C.gold : variant === 'orange' ? C.orange : C.accent;
   const fg = variant === 'ghost' || variant === 'red' ? C.text : '#000';
   return (
     <Pressable
@@ -62,7 +62,7 @@ export function Btn({
   );
 }
 
-export function Bar({ value, max, color = C.blue, label, unit = 'g', stacked }: { value: number; max: number; color?: string; label: string; unit?: string; stacked?: boolean }) {
+export function Bar({ value, max, color = C.accent, label, unit = 'g', stacked }: { value: number; max: number; color?: string; label: string; unit?: string; stacked?: boolean }) {
   const pct = max > 0 ? Math.min(1, value / max) : 0;
   return (
     <View style={{ gap: 6 }}>
@@ -100,14 +100,14 @@ export function Field({ label, value, onChangeText, keyboardType, placeholder, s
   );
 }
 
-export function Chips<V extends string>({ options, value, onChange, color = C.blue }: { options: readonly V[]; value: V | null; onChange: (v: V) => void; color?: string }) {
+export function Chips<V extends string>({ options, value, onChange, color = C.accent }: { options: readonly V[]; value: V | null; onChange: (v: V) => void; color?: string }) {
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
       {options.map((o) => {
         const on = o === value;
         return (
           <Pressable key={o} onPress={() => onChange(o)} style={[s.chip, { backgroundColor: on ? color : C.card2 }]}>
-            <T size={12} color={on ? (color === C.blue ? '#fff' : '#000') : C.dim}>{o}</T>
+            <T size={12} color={on ? (color === C.accent ? '#fff' : '#000') : C.dim}>{o}</T>
           </Pressable>
         );
       })}

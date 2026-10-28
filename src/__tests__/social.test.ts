@@ -8,6 +8,9 @@ jest.mock('../lib/auth', () => ({
   getSession: async () => ({ token: 'tok', email: 'a@b.co', userId: 'me-id', username: 'alice' }),
   decodeJwt: () => ({ sub: 'me-id' }),
 }));
+jest.mock('../lib/repo', () => ({
+  getProfile: async () => ({ display_name: 'Alice', bio: 'Je soulève', avatar: '💪', avatar_color: '#E5383B', title: 'Rat de salle' }),
+}));
 jest.mock('../lib/stats', () => ({
   challengeScore: async () => 42,
   publicSummary: async () => ({ xp: 100, level: 2, week_xp: 30, rank_index: 3, rank_score: 3.4, muscle_ranks: { PECTORAUX: 4.1 } }),
@@ -57,7 +60,7 @@ test('pushStats : upsert du profil public puis score des défis actifs', async (
   expect(up.url).toContain('public_profiles?on_conflict=user_id');
   expect(up.init.headers.Prefer).toContain('merge-duplicates');
   const body = JSON.parse(up.init.body);
-  expect(body).toMatchObject({ user_id: 'me-id', username: 'alice', xp: 100, rank_index: 3 });
+  expect(body).toMatchObject({ user_id: 'me-id', username: 'alice', xp: 100, rank_index: 3, display_name: 'Alice', bio: 'Je soulève', avatar: '💪', avatar_color: '#E5383B', title: 'Rat de salle' });
   // un seul PATCH : le défi c2 est terminé
   const patches = calls.filter((c) => c.init.method === 'PATCH');
   expect(patches).toHaveLength(1);
@@ -95,4 +98,13 @@ test('recherche : saisie nettoyée, soi-même exclu', async () => {
   expect(calls[0].url).toContain('username=ilike.*ali*');
   expect(r.map((x) => x.username)).toEqual(['alicia']);
   expect(await S.searchUsers('a')).toEqual([]);
+});
+
+test('profil d\'un joueur par id', async () => {
+  responses = [{ body: [{ user_id: 'u1', username: 'bob', muscle_ranks: { DOS: 4.2 } }] }];
+  const p = await S.profileById('u1');
+  expect(calls[0].url).toBe('https://x.supabase.co/rest/v1/public_profiles?user_id=eq.u1&select=*');
+  expect(p?.username).toBe('bob');
+  responses = [{ body: [] }];
+  expect(await S.profileById('zz')).toBeNull();
 });

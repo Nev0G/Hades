@@ -26,6 +26,14 @@ create policy pp_insert on public.public_profiles for insert to authenticated wi
 create policy pp_update on public.public_profiles for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy pp_delete on public.public_profiles for delete to authenticated using (user_id = auth.uid());
 
+-- Personnalisation du profil (ajoutée après la première version : rejouable).
+alter table public.public_profiles
+  add column if not exists display_name text check (display_name is null or char_length(display_name) <= 24),
+  add column if not exists bio text check (bio is null or char_length(bio) <= 160),
+  add column if not exists avatar text check (avatar is null or char_length(avatar) <= 8),
+  add column if not exists avatar_color text check (avatar_color is null or avatar_color ~ '^#[0-9A-Fa-f]{6}$'),
+  add column if not exists title text check (title is null or char_length(title) <= 40);
+
 -- ---------- Amis ----------
 create table if not exists public.friendships (
   id         uuid primary key default gen_random_uuid(),

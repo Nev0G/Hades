@@ -61,12 +61,12 @@ export default function Auth() {
       }
     >
       <View style={{ height: 24 }} />
-      <T size={48} color={C.blue}>HADES</T>
+      <T size={48} color={C.accent}>HADES</T>
       <T size={16} dim>Suis tes séances, ta nutrition et monte en rang.</T>
 
       <View style={{ flexDirection: 'row', backgroundColor: C.card, borderRadius: 14, padding: 4 }}>
         {(['signup', 'login'] as const).map((m) => (
-          <Pressable key={m} onPress={() => { setMode(m); setError(''); setInfo(''); setTouched(false); }} style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: mode === m ? C.blue : 'transparent' }}>
+          <Pressable key={m} onPress={() => { setMode(m); setError(''); setInfo(''); setTouched(false); }} style={{ flex: 1, padding: 12, borderRadius: 10, backgroundColor: mode === m ? C.accent : 'transparent' }}>
             <T size={15} color={mode === m ? '#fff' : C.dim} style={{ textAlign: 'center' }}>{m === 'signup' ? 'Inscription' : 'Connexion'}</T>
           </Pressable>
         ))}
@@ -79,7 +79,7 @@ export default function Auth() {
       <Field
         label="Mot de passe" value={pw} onChangeText={setPw} secure={!show} placeholder={mode === 'signup' ? '8 caractères minimum' : ''}
         error={show_('password')}
-        right={<T size={13} color={C.blue} onPress={() => setShow(!show)}>{show ? 'Masquer' : 'Voir'}</T>}
+        right={<T size={13} color={C.accent} onPress={() => setShow(!show)}>{show ? 'Masquer' : 'Voir'}</T>}
       />
       {mode === 'signup' && (
         <>
@@ -91,7 +91,7 @@ export default function Auth() {
           </View>
           <Field label="Confirmer le mot de passe" value={confirm} onChangeText={setConfirm} secure={!show} error={show_('confirm')} />
           <Pressable onPress={() => setConsent(!consent)} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-            <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: consent ? C.blue : C.card2, alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
+            <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: consent ? C.accent : C.card2, alignItems: 'center', justifyContent: 'center', marginTop: 2 }}>
               {consent ? <T size={15} color="#fff">✓</T> : null}
             </View>
             <T size={13} dim style={{ flex: 1 }}>
@@ -102,7 +102,7 @@ export default function Auth() {
         </>
       )}
       {mode === 'login' && (
-        <T size={13} color={C.blue} onPress={() => run(async () => { await resetPassword(form.email); throw new Error('CONFIRME : EMAIL DE REINITIALISATION ENVOYE.'); })}>Mot de passe oublié ?</T>
+        <T size={13} color={C.accent} onPress={() => run(async () => { await resetPassword(form.email); throw new Error('CONFIRME : EMAIL DE REINITIALISATION ENVOYE.'); })}>Mot de passe oublié ?</T>
       )}
       {!!error && <T size={13} color={C.red}>{error}</T>}
       {!!info && <T size={13} color={C.green}>{info}</T>}

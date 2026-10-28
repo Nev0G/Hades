@@ -32,6 +32,10 @@ Les scores du classement et des défis sont calculés par l'app (mode « confian
 - **Repas enregistrés et recettes perso** : Nutrition > Ajouter > Repas / Recettes, ou « Enregistrer comme repas » depuis un repas du jour.
 - **Visualisation musculaire** : silhouette anatomique face / dos avec une couleur par muscle (récupération, rangs, aperçu d'une routine), à partir des images libres de [wger](https://wger.de) (licence CC-BY-SA 4.0) intégrées dans `assets/muscles` : hors-ligne, sans clé ni quota. Pas d'image pour les avant-bras.
 
+- **Amis** (onglet Social, compte en ligne) : recherche par pseudo, demandes envoyées / reçues, liste d'amis, profil d'un joueur (rang, niveau, carte musculaire, comparaison muscle par muscle avec toi), invitation par partage du pseudo, classement entre amis.
+- **Profil personnalisable** (Profil > Personnaliser) : avatar (emoji + couleur), nom affiché, pseudo, bio, titre, et **couleur de l'application** (rouge par défaut). Ces informations sont visibles par tes amis.
+- **Saisie** : clavier numérique natif du téléphone (poids, reps, grammes, objectifs).
+
 ## Exercices
 
 120 exercices fournis hors-ligne + import de ~900 exercices depuis l'API ouverte [wger](https://wger.de) (Train > Bibliothèque > Importer). Recherche d'aliments : base locale + Open Food Facts.

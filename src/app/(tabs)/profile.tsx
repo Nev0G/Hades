@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Btn, Card, Chips, Screen, T, Title } from '../../components/ui';
+import { Btn, Card, Chips, Screen, T } from '../../components/ui';
+import { Avatar } from '../../components/Avatar';
+import { RankBadge } from '../../components/RankBadge';
+import { exerciseStats, muscleRanks, player } from '../../lib/stats';
+import { TIER_COLOR } from '../../lib/rank';
 import { NumForm } from '../../components/NumForm';
 import { kvGet, kvSet, save, all } from '../../lib/db';
 import { useLoad } from '../../lib/hooks';
@@ -22,7 +26,8 @@ export default function Profile() {
   const [d, reload] = useLoad(async () => {
     const inc0 = { a: (await kvGet('inc_a')) ?? '2.5', b: (await kvGet('inc_b')) ?? '5', r: (await kvGet('inc_r')) ?? '1' };
     setInc(inc0);
-    return { p: await getProfile(), s: await getSession(), pending: (await all('SELECT seq FROM outbox')).length };
+    const ex = await exerciseStats();
+    return { p: await getProfile(), s: await getSession(), pending: (await all('SELECT seq FROM outbox')).length, lvl: await player(), overall: muscleRanks(ex).overall };
   });
   const p = d?.p;
   if (!p) return <Screen><T>...</T></Screen>;
@@ -35,11 +40,24 @@ export default function Profile() {
 
   return (
     <Screen>
-      <Title>PROFIL</Title>
-      <Card accent={C.gold}>
+      <Card>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <Avatar emoji={p.avatar} color={p.avatar_color} name={p.display_name || p.username || d.s?.email} size={72} />
+          <View style={{ flex: 1, gap: 2 }}>
+            <T size={20}>{p.display_name || p.username || 'Mon profil'}</T>
+            {p.username ? <T size={13} dim>@{p.username}</T> : null}
+            {p.title ? <T size={13} color={C.gold}>{p.title}</T> : null}
+            <T size={12} dim>Niveau {d.lvl.level} · {d.lvl.xp} XP</T>
+          </View>
+          <RankBadge tier={d.overall.tier} size={48} />
+        </View>
+        {p.bio ? <T size={14}>{p.bio}</T> : <T size={13} dim>Ajoute une bio pour que tes amis te reconnaissent.</T>}
         <T size={12} dim>{d.s?.email}</T>
-        <T size={13}>OBJECTIF {p.kcal} KCAL · TDEE {p.tdee}</T>
-        <T size={13}>P {p.protein}G · G {p.carbs}G · L {p.fat}G</T>
+        <Btn label="Personnaliser mon profil" onPress={() => router.push('/profile-edit')} />
+      </Card>
+      <Card>
+        <T size={13}>Objectif {p.kcal} kcal · TDEE {p.tdee}</T>
+        <T size={13}>P {p.protein} g · G {p.carbs} g · L {p.fat} g</T>
       </Card>
       <Btn label="Modifier mes objectifs (calories, macros, eau…)" onPress={() => router.push('/goals')} />
       <T size={11} dim>OBJECTIF</T>

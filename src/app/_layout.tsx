@@ -5,11 +5,11 @@ import { Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, JetBrainsMono_800ExtraBold, JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
 import { getNotifications } from '../lib/notif';
-import { getDb } from '../lib/db';
+import { getDb, kvGet } from '../lib/db';
 import { getSession } from '../lib/auth';
 import { getProfile } from '../lib/repo';
 import { startSyncLoop } from '../lib/sync';
-import { C } from '../lib/theme';
+import { C, onAccentChange } from '../lib/theme';
 
 getNotifications()?.setNotificationHandler({
   handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
@@ -19,6 +19,7 @@ export default function Root() {
   const [fontsLoaded, fontError] = useFonts({ JetBrainsMono_800ExtraBold, JetBrainsMono_500Medium });
   const [ready, setReady] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  const [themeVer, setThemeVer] = useState(0);
   const [route, setRoute] = useState<'login' | 'onboarding' | 'app'>('login');
   const router = useRouter();
   const segments = useSegments();
@@ -27,6 +28,8 @@ export default function Root() {
     (async () => {
       try {
         await getDb();
+        const savedAccent = await kvGet('accent');
+        if (savedAccent) C.accent = savedAccent;
         const s = await getSession();
         const p = await getProfile();
         setRoute(!s ? 'login' : !p ? 'onboarding' : 'app');
@@ -35,7 +38,9 @@ export default function Root() {
       }
       setReady(true);
     })();
-    return startSyncLoop();
+    const stopSync = startSyncLoop();
+    const stopTheme = onAccentChange(() => setThemeVer((v) => v + 1));
+    return () => { stopSync(); stopTheme(); };
   }, []);
 
   // Garde de navigation : relit l'état à chaque changement d'écran racine.
@@ -65,7 +70,7 @@ export default function Root() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: 'none' }} />
+      <Stack key={themeVer} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: C.bg }, animation: 'none' }} />
     </SafeAreaProvider>
   );
 }
