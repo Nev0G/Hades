@@ -65,7 +65,7 @@ test('macros personnalisées', () => {
   expect(splitFromPercent(2000, { p: 30, c: 40, f: 30 })).toEqual({ protein: 150, carbs: 200, fat: 67 });
 });
 
-import { parseMuscleNames, toApiParams, heatmapUrl } from '../lib/muscleApi';
+import { parseMuscleNames, toApiParams, heatmapUrl, apiErrorMessage, ALL_API_NAMES } from '../lib/muscleApi';
 
 test('API muscle visualizer (réponse réelle) : parsing, mapping, URL heatmap', () => {
   // extrait de GET /api/v1/muscles
@@ -80,4 +80,13 @@ test('API muscle visualizer (réponse réelle) : parsing, mapping, URL heatmap',
   expect(heatmapUrl(p.muscles, p.colors)).toBe('https://muscle-visualizer-api.p.rapidapi.com/api/v1/visualize/heatmap?muscles=CHEST,LATS,UPPER%20BACK,QUADS&colors=%23FF453A,%23FF9F0A,%23FF9F0A,%2334C759&size=small&format=jpeg');
   // un nom absent de l'API est ignoré
   expect(toApiParams([{ muscle: 'ISCHIOS', color: '#fff' }], ['CHEST']).muscles).toEqual([]);
+});
+
+test('API muscle visualizer : erreurs lisibles et noms valides', () => {
+  expect(apiErrorMessage(400, '{"error":{"code":"BAD_REQUEST","message":"The png format is not available in your current plan."}}')).toBe('HTTP 400 : The png format is not available in your current plan.');
+  expect(apiErrorMessage(429, '{"message":"Too many requests"}')).toBe('HTTP 429 : Too many requests');
+  expect(apiErrorMessage(502, '<html>bad gateway</html>')).toMatch(/^HTTP 502 : <html>/);
+  // noms vérifiés contre GET /api/v1/muscles
+  const real = ['ABS', 'BICEPS', 'CALVES', 'CHEST', 'DELTOIDS', 'FOREARMS', 'GLUTES', 'HAMSTRINGS', 'LATS', 'QUADS', 'TRAPS', 'TRICEPS', 'UPPER BACK'];
+  for (const n of ALL_API_NAMES) expect(real).toContain(n);
 });

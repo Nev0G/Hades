@@ -2,6 +2,8 @@
 // sinon (ou en cas d'erreur / quota) silhouette hors-ligne. https://github.com/ExerciseDB/muscle-visualizer-api
 // Chemins et paramètres vérifiés contre l'API réelle : base /api/v1, /muscles, /visualize/heatmap (une couleur par muscle).
 // Plan gratuit : format jpeg et taille small uniquement, fond blanc.
+import { kvGet, kvSet } from './db';
+
 export const RAPIDAPI_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY;
 export const muscleApiEnabled = !!RAPIDAPI_KEY;
 const HOST = 'muscle-visualizer-api.p.rapidapi.com';
@@ -39,14 +41,57 @@ export function toApiParams(items: MuscleColor[], available: string[]): { muscle
   return { muscles: [...seen.keys()], colors: [...seen.values()] };
 }
 
-let cache: string[] | null = null;
-export async function availableMuscles(): Promise<string[]> {
-  if (cache) return cache;
-  const res = await fetch(`${BASE}/muscles`, { headers: apiHeaders() });
-  if (!res.ok) throw new Error(`muscle-visualizer ${res.status}`);
-  return (cache = parseMuscleNames(await res.json()));
-}
+/** Noms API de tous nos groupes (vérifiés présents dans GET /muscles) : évite un appel réseau par affichage. */
+export const ALL_API_NAMES = [...new Set(Object.values(API_GROUPS).flat())];
 
 /** Image anatomique face + dos, une couleur par muscle. */
 export const heatmapUrl = (muscles: string[], colors: string[]) =>
   `${BASE}/visualize/heatmap?muscles=${muscles.map(encodeURIComponent).join(',')}&colors=${colors.map(encodeURIComponent).join(',')}&size=small&format=jpeg`;
+
+/** Message lisible d'une réponse d'erreur de l'API (corps JSON `{ error: { message } }` ou `{ message }`). */
+export function apiErrorMessage(status: number, body: string): string {
+  let msg = body.slice(0, 120);
+  try { const j = JSON.parse(body); msg = j?.error?.message ?? j?.message ?? msg; } catch { /* corps non JSON */ }
+  return `HTTP ${status}${msg ? ` : ${String(msg).slice(0, 120)}` : ''}`;
+}
+
+const inflight = new Map<string, Promise<MuscleImage>>();
+export type MuscleImage = { uri: string; remaining: number | null };
+
+/** Sous ce nombre de requêtes restantes ce mois-ci (plan gratuit : 100/mois), on n'appelle plus l'API. */
+export const QUOTA_FLOOR = 5;
+
+/**
+ * Télécharge l'image (en-têtes RapidAPI inclus) et la renvoie en data-URI, avec cache local :
+ * une même combinaison de couleurs ne consomme le quota de l'API qu'une seule fois.
+ * Le quota restant (en-tête x-ratelimit-requests-remaining) est mémorisé et protégé par QUOTA_FLOOR.
+ */
+export function fetchHeatmapDataUri(url: string): Promise<MuscleImage> {
+  const hit = inflight.get(url);
+  if (hit) return hit;
+  const p = (async (): Promise<MuscleImage> => {
+    const stored = await kvGet('muscle_api_remaining');
+    const remainingKnown = stored === null || stored === '' ? null : Number(stored);
+    const cached = await kvGet(`muscleimg:${url}`);
+    if (cached) return { uri: cached, remaining: remainingKnown };
+    if (remainingKnown !== null && remainingKnown <= QUOTA_FLOOR) throw new Error(`quota mensuel de l'API presque épuisé (${remainingKnown} restantes)`);
+    const res = await fetch(url, { headers: apiHeaders() });
+    const header = res.headers.get('x-ratelimit-requests-remaining');
+    const remaining = header !== null && header !== '' && Number.isFinite(Number(header)) ? Number(header) : remainingKnown;
+    if (remaining !== null) await kvSet('muscle_api_remaining', String(remaining));
+    if (!res.ok) throw new Error(apiErrorMessage(res.status, await res.text()));
+    const type = res.headers.get('content-type') ?? '';
+    if (!type.startsWith('image/')) throw new Error(`réponse inattendue (${type || 'sans type'})`);
+    const blob = await res.blob();
+    const dataUri = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => (typeof r.result === 'string' ? resolve(r.result) : reject(new Error('lecture impossible')));
+      r.onerror = () => reject(new Error('lecture impossible'));
+      r.readAsDataURL(blob);
+    });
+    await kvSet(`muscleimg:${url}`, dataUri);
+    return { uri: dataUri, remaining };
+  })().finally(() => inflight.delete(url));
+  inflight.set(url, p);
+  return p;
+}

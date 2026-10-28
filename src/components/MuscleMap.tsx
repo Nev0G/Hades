@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Image, Platform, View } from 'react-native';
+import { Image, View } from 'react-native';
 import { BodyMap } from './BodyRanks';
 import { T } from './ui';
-import { MuscleColor, apiHeaders, availableMuscles, heatmapUrl, muscleApiEnabled, toApiParams } from '../lib/muscleApi';
+import { ALL_API_NAMES, MuscleColor, fetchHeatmapDataUri, heatmapUrl, muscleApiEnabled, toApiParams } from '../lib/muscleApi';
 
 /**
  * Carte musculaire : image anatomique de l'API ExerciseDB (une couleur par muscle) quand la clé RapidAPI est configurée,
@@ -10,7 +10,7 @@ import { MuscleColor, apiHeaders, availableMuscles, heatmapUrl, muscleApiEnabled
  */
 export function MuscleMap({ items, width = 300 }: { items: MuscleColor[]; width?: number }) {
   const [uri, setUri] = useState<string | null>(null);
-  const [headers, setHeaders] = useState<Record<string, string> | undefined>(undefined);
+  const [remaining, setRemaining] = useState<number | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const key = items.map((i) => `${i.muscle}:${i.color}`).join('|');
 
@@ -18,27 +18,17 @@ export function MuscleMap({ items, width = 300 }: { items: MuscleColor[]; width?
     setUri(null); setFailed(null);
     if (!muscleApiEnabled || !items.length) return;
     let live = true;
-    let blobUrl: string | null = null;
     (async () => {
       try {
-        const p = toApiParams(items, await availableMuscles());
+        const p = toApiParams(items, ALL_API_NAMES);
         if (!p.muscles.length) throw new Error('aucun muscle reconnu');
-        const url = heatmapUrl(p.muscles, p.colors);
-        if (Platform.OS === 'web') {
-          // <img> ne peut pas envoyer d'en-têtes : on télécharge l'image puis on l'affiche via une URL locale.
-          const res = await fetch(url, { headers: apiHeaders() });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          blobUrl = URL.createObjectURL(await res.blob());
-          if (live) { setHeaders(undefined); setUri(blobUrl); }
-        } else if (live) {
-          setHeaders(apiHeaders());
-          setUri(url);
-        }
+        const img = await fetchHeatmapDataUri(heatmapUrl(p.muscles, p.colors));
+        if (live) { setUri(img.uri); setRemaining(img.remaining); }
       } catch (e: any) {
         if (live) setFailed(String(e?.message ?? e));
       }
     })();
-    return () => { live = false; if (blobUrl) URL.revokeObjectURL(blobUrl); };
+    return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
@@ -46,8 +36,9 @@ export function MuscleMap({ items, width = 300 }: { items: MuscleColor[]; width?
     return (
       <View style={{ alignItems: 'center' }}>
         <View style={{ backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden' }}>
-          <Image source={{ uri, headers }} style={{ width, height: width }} resizeMode="contain" onError={() => setFailed('image illisible')} />
+          <Image source={{ uri }} style={{ width, height: width }} resizeMode="contain" onError={() => setFailed('image illisible après téléchargement')} />
         </View>
+        {remaining !== null && <T size={11} dim style={{ marginTop: 6 }}>Image ExerciseDB · {remaining} requêtes restantes ce mois</T>}
       </View>
     );
   }
