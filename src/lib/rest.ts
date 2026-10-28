@@ -19,6 +19,7 @@ export async function initRestNotifications() {
 /** Notification locale à l'échéance du repos : visible sur l'écran de verrouillage. */
 export async function scheduleRestEnd(seconds: number, label: string) {
   await cancelRestEnd();
+  startRestActivity(seconds, label);
   if (Platform.OS === 'web') return;
   try {
     notifId = await Notifications.scheduleNotificationAsync({
@@ -29,6 +30,7 @@ export async function scheduleRestEnd(seconds: number, label: string) {
 }
 
 export async function cancelRestEnd() {
+  stopRestActivity();
   if (notifId) await Notifications.cancelScheduledNotificationAsync(notifId).catch(() => {});
   notifId = null;
 }
@@ -36,4 +38,28 @@ export async function cancelRestEnd() {
 export function fmt(s: number) {
   const m = Math.floor(s / 60);
   return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+
+// ---- Live Activity iOS (écran verrouillé / Dynamic Island) ----
+let activityId: string | undefined;
+
+export async function startRestActivity(seconds: number, label: string) {
+  if (Platform.OS !== 'ios') return;
+  try {
+    const LA = await import('expo-live-activity');
+    await stopRestActivity();
+    activityId = LA.startActivity(
+      { title: 'REPOS', subtitle: label, progressBar: { date: Date.now() + seconds * 1000 } },
+      { backgroundColor: '#000000', titleColor: '#FFC400', subtitleColor: '#FFFFFF', progressViewTint: '#FF1E1E', timerType: 'digital' },
+    ) || undefined;
+  } catch { activityId = undefined; }
+}
+
+export async function stopRestActivity() {
+  if (Platform.OS !== 'ios' || !activityId) return;
+  try {
+    const LA = await import('expo-live-activity');
+    LA.stopActivity(activityId, { title: 'REPOS TERMINE' });
+  } catch { /* module absent (Expo Go) */ }
+  activityId = undefined;
 }

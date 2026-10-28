@@ -33,3 +33,9 @@ begin
     execute format('create policy own_rows on public.%I for all using (user_id = auth.uid()) with check (user_id = auth.uid())', t);
   end loop;
 end $$;
+
+-- Stockage des photos de progression (bucket privé).
+insert into storage.buckets (id, name, public) values ('photos', 'photos', false) on conflict do nothing;
+drop policy if exists photos_rw on storage.objects;
+create policy photos_rw on storage.objects for all to authenticated
+  using (bucket_id = 'photos' and owner = auth.uid()) with check (bucket_id = 'photos' and owner = auth.uid());

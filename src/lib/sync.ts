@@ -20,6 +20,10 @@ export async function syncNow(): Promise<{ sent: number; pending: number }> {
       const byTable = new Map<string, Map<string, unknown>>();
       for (const b of batch) {
         const p = JSON.parse(b.payload);
+        if (b.tbl === 'photos' && typeof p.uri === 'string' && !p.uri.startsWith('http')) {
+          const up = await uploadPhoto(p.uri, p.id, s.token);
+          if (up) { p.uri = up; }
+        }
         if (!byTable.has(b.tbl)) byTable.set(b.tbl, new Map());
         byTable.get(b.tbl)!.set(p.id, p);
       }
@@ -51,4 +55,20 @@ export function startSyncLoop(intervalMs = 20000) {
   syncNow();
   const t = setInterval(syncNow, intervalMs);
   return () => clearInterval(t);
+}
+
+/** Envoie le fichier vers le bucket Storage `photos` (privé, dossier par utilisateur via RLS). */
+async function uploadPhoto(uri: string, id: string, token: string): Promise<string | null> {
+  try {
+    const blob = await (await fetch(uri)).blob();
+    const path = `${id}.jpg`;
+    const res = await fetch(`${supabase.url}/storage/v1/object/photos/${path}`, {
+      method: 'POST',
+      headers: { apikey: supabase.key!, Authorization: `Bearer ${token}`, 'Content-Type': 'image/jpeg', 'x-upsert': 'true' },
+      body: blob,
+    });
+    return res.ok ? `${supabase.url}/storage/v1/object/authenticated/photos/${path}` : null;
+  } catch {
+    return null;
+  }
 }

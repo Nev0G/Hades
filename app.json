@@ -13,7 +13,8 @@
       "bundleIdentifier": "app.hades.tracker",
       "infoPlist": {
         "NSCameraUsageDescription": "SCAN DES CODES-BARRES ET PHOTOS DE PROGRESSION",
-        "NSPhotoLibraryUsageDescription": "PHOTOS DE PROGRESSION"
+        "NSPhotoLibraryUsageDescription": "PHOTOS DE PROGRESSION",
+        "NSSupportsLiveActivities": true
       }
     },
     "android": {
@@ -54,7 +55,8 @@
           "color": "#FF1E1E"
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-live-activity"
     ],
     "web": {
       "favicon": "./assets/favicon.png"

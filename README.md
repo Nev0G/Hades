@@ -29,8 +29,7 @@ Sans configuration : mode local (données sur l'appareil, SSO indisponible).
 
 ## Limites connues
 
-- Live Activities iOS : non implémenté (module natif requis). Le repos est notifié par notification locale
-  avec actions (visible écran verrouillé).
-- Les photos de progression restent locales (seule leur référence est synchronisée).
+- Live Activities iOS : branchées via `expo-live-activity` (build natif requis, pas Expo Go) ; notification locale avec actions sur Android.
+- Photos de progression : envoyées vers le bucket Supabase `photos` à la synchro.
 - Pas encore testé sur appareil physique ; le bundle Android compile.
 - Phase 2 (montres, export CSV) non traitée ; export JSON disponible dans PROFIL.
