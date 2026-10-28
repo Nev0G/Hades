@@ -115,7 +115,7 @@ export default function Dashboard() {
 
       <Card>
         <T size={18}>Récupération musculaire</T>
-        <MuscleMap width={Math.min(300, width - 64)} items={d.rec.filter((r) => r.lastTrained).map((r) => ({ muscle: r.muscle, color: STATE_COLOR[r.state] }))} />
+        <MuscleMap width={Math.min(300, width - 64)} items={d.rec.map((r) => ({ muscle: r.muscle, color: STATE_COLOR[r.state] }))} />
         <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
           {(['fatigue', 'recovering', 'ready'] as const).map((s) => (
             <View key={s} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
@@ -184,7 +184,7 @@ export default function Dashboard() {
             </View>
           </View>
         </View>
-        <MuscleMap width={Math.min(300, width - 64)} items={d.ranks.muscles.filter((m) => m.tier).map((m) => ({ muscle: m.muscle, color: TIER_COLOR[m.tier!] }))} />
+        <MuscleMap width={Math.min(300, width - 64)} items={d.ranks.muscles.map((m) => ({ muscle: m.muscle, color: m.tier ? TIER_COLOR[m.tier] : '#9A9AA0' }))} />
         {top.map((e) => (
           <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <RankBadge tier={e.rank.tier} size={30} />
