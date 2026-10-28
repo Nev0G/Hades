@@ -30,7 +30,7 @@ Les scores du classement et des défis sont calculés par l'app (mode « confian
 - **Récupération musculaire** : estimation par muscle d'après le volume et le délai depuis la dernière séance (`src/lib/recovery.ts`), affichée sur le dashboard ; une séance est conseillée selon la disponibilité de ses muscles.
 - **Objectifs modifiables** (Profil > Mes objectifs) : calories, protéines / glucides / lipides (avec répartitions rapides), profil corporel, eau, séances par semaine, poids cible.
 - **Repas enregistrés et recettes perso** : Nutrition > Ajouter > Repas / Recettes, ou « Enregistrer comme repas » depuis un repas du jour.
-- **Visualisation musculaire** : API [Muscle Visualizer d'ExerciseDB](https://github.com/ExerciseDB/muscle-visualizer-api) si `EXPO_PUBLIC_RAPIDAPI_KEY` est défini (abonnement RapidAPI), avec repli automatique sur la silhouette hors-ligne.
+- **Visualisation musculaire** : API [Muscle Visualizer d'ExerciseDB](https://github.com/ExerciseDB/muscle-visualizer-api) (endpoint `/api/v1/visualize/heatmap`, une couleur par muscle) pour la récupération, les rangs et l'aperçu d'une routine, si `EXPO_PUBLIC_RAPIDAPI_KEY` est défini. Plan gratuit : image JPEG 360 px sur fond blanc. Repli automatique sur la silhouette hors-ligne en cas d'erreur ou de quota.
 
 ## Exercices
 

@@ -1,41 +1,42 @@
 // Visualisation musculaire : API « Muscle Visualizer » d'ExerciseDB (via RapidAPI) quand une clé est fournie,
-// sinon (ou en cas d'erreur) silhouette hors-ligne. https://github.com/ExerciseDB/muscle-visualizer-api
+// sinon (ou en cas d'erreur / quota) silhouette hors-ligne. https://github.com/ExerciseDB/muscle-visualizer-api
+// Chemins et paramètres vérifiés contre l'API réelle : base /api/v1, /muscles, /visualize/heatmap (une couleur par muscle).
+// Plan gratuit : format jpeg et taille small uniquement, fond blanc.
 export const RAPIDAPI_KEY = process.env.EXPO_PUBLIC_RAPIDAPI_KEY;
 export const muscleApiEnabled = !!RAPIDAPI_KEY;
 const HOST = 'muscle-visualizer-api.p.rapidapi.com';
-const BASE = `https://${HOST}/v1`;
+const BASE = `https://${HOST}/api/v1`;
 export const apiHeaders = () => ({ 'X-RapidAPI-Key': RAPIDAPI_KEY ?? '', 'X-RapidAPI-Host': HOST });
 
-/** Noms possibles côté API pour chacun de nos groupes (le premier présent dans /v1/muscles est retenu). */
-export const API_CANDIDATES: Record<string, string[]> = {
-  PECTORAUX: ['chest', 'pectorals', 'pecs'],
-  DOS: ['lats', 'latissimus dorsi', 'upper back', 'back', 'middle back'],
-  EPAULES: ['shoulders', 'delts', 'deltoids'],
-  TRAPEZES: ['traps', 'trapezius'],
-  BICEPS: ['biceps'],
-  TRICEPS: ['triceps'],
-  'AVANT-BRAS': ['forearms'],
-  ABDOS: ['abs', 'abdominals'],
-  QUADRICEPS: ['quads', 'quadriceps'],
-  ISCHIOS: ['hamstrings'],
-  FESSIERS: ['glutes'],
-  MOLLETS: ['calves'],
+/** Noms de l'API (majuscules) pour chacun de nos groupes ; tous ceux présents dans /muscles sont colorés. */
+export const API_GROUPS: Record<string, string[]> = {
+  PECTORAUX: ['CHEST'],
+  DOS: ['LATS', 'UPPER BACK'],
+  EPAULES: ['DELTOIDS'],
+  TRAPEZES: ['TRAPS'],
+  BICEPS: ['BICEPS'],
+  TRICEPS: ['TRICEPS'],
+  'AVANT-BRAS': ['FOREARMS'],
+  ABDOS: ['ABS'],
+  QUADRICEPS: ['QUADS'],
+  ISCHIOS: ['HAMSTRINGS'],
+  FESSIERS: ['GLUTES'],
+  MOLLETS: ['CALVES'],
 };
 
-/** Extrait les noms de muscles d'une réponse /v1/muscles (tableau de chaînes ou d'objets, éventuellement sous `data`). */
+/** Extrait les noms de muscles d'une réponse /muscles (`{ success, data: [...] }`, ou tableau brut). */
 export function parseMuscleNames(json: any): string[] {
   const arr: any[] = Array.isArray(json) ? json : Array.isArray(json?.data) ? json.data : Array.isArray(json?.muscles) ? json.muscles : [];
-  return arr.map((x) => (typeof x === 'string' ? x : x?.name ?? x?.id ?? '')).map((s) => String(s).toLowerCase()).filter(Boolean);
+  return arr.map((x) => (typeof x === 'string' ? x : x?.name ?? x?.id ?? '')).map((s) => String(s).toUpperCase()).filter(Boolean);
 }
 
-/** Associe nos groupes aux noms valides de l'API. */
-export function mapMuscles(ours: string[], available: string[]): string[] {
-  const out: string[] = [];
-  for (const m of ours) {
-    const hit = (API_CANDIDATES[m] ?? []).find((c) => available.includes(c));
-    if (hit && !out.includes(hit)) out.push(hit);
-  }
-  return out;
+export type MuscleColor = { muscle: string; color: string };
+
+/** Associe (muscle HADES, couleur) -> listes parallèles (muscle API, couleur) ; ignore les noms absents de l'API. */
+export function toApiParams(items: MuscleColor[], available: string[]): { muscles: string[]; colors: string[] } {
+  const seen = new Map<string, string>();
+  for (const it of items) for (const name of API_GROUPS[it.muscle] ?? []) if (available.includes(name)) seen.set(name, it.color);
+  return { muscles: [...seen.keys()], colors: [...seen.values()] };
 }
 
 let cache: string[] | null = null;
@@ -46,6 +47,6 @@ export async function availableMuscles(): Promise<string[]> {
   return (cache = parseMuscleNames(await res.json()));
 }
 
-/** URL de l'image (surbrillance d'une couleur sur les muscles donnés). */
-export const highlightUrl = (apiMuscles: string[], color: string) =>
-  `${BASE}/visualize/muscles?muscles=${apiMuscles.map(encodeURIComponent).join(',')}&color=${encodeURIComponent(color)}`;
+/** Image anatomique face + dos, une couleur par muscle. */
+export const heatmapUrl = (muscles: string[], colors: string[]) =>
+  `${BASE}/visualize/heatmap?muscles=${muscles.map(encodeURIComponent).join(',')}&colors=${colors.map(encodeURIComponent).join(',')}&size=small&format=jpeg`;

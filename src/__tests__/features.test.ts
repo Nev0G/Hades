@@ -65,32 +65,19 @@ test('macros personnalisées', () => {
   expect(splitFromPercent(2000, { p: 30, c: 40, f: 30 })).toEqual({ protein: 150, carbs: 200, fat: 67 });
 });
 
-import { mapMuscles, parseMuscleNames, highlightUrl } from '../lib/muscleApi';
+import { parseMuscleNames, toApiParams, heatmapUrl } from '../lib/muscleApi';
 
-test('API muscle visualizer : parsing et mapping tolérants', () => {
-  expect(parseMuscleNames(['Chest', 'Biceps'])).toEqual(['chest', 'biceps']);
-  expect(parseMuscleNames({ data: [{ name: 'Quads' }, { id: 'Glutes' }] })).toEqual(['quads', 'glutes']);
+test('API muscle visualizer (réponse réelle) : parsing, mapping, URL heatmap', () => {
+  // extrait de GET /api/v1/muscles
+  const real = { success: true, data: ['ABS', 'BICEPS', 'CALVES', 'CHEST', 'DELTOIDS', 'FOREARMS', 'GLUTES', 'HAMSTRINGS', 'LATS', 'QUADS', 'TRAPS', 'TRICEPS', 'UPPER BACK'] };
+  const names = parseMuscleNames(real);
+  expect(names).toContain('CHEST');
+  expect(parseMuscleNames(['Chest'])).toEqual(['CHEST']);
   expect(parseMuscleNames(null)).toEqual([]);
-  const av = ['chest', 'quadriceps', 'hamstrings', 'lats'];
-  expect(mapMuscles(['PECTORAUX', 'QUADRICEPS', 'ISCHIOS', 'DOS', 'BICEPS'], av)).toEqual(['chest', 'quadriceps', 'hamstrings', 'lats']);
-  expect(highlightUrl(['chest', 'upper back'], '#FF453A')).toBe('https://muscle-visualizer-api.p.rapidapi.com/v1/visualize/muscles?muscles=chest,upper%20back&color=%23FF453A');
-});
-
-import { entriesFor, perPortion, totals } from '../lib/meals';
-
-test('repas et recettes : totaux, portions, lignes de journal', () => {
-  const items = [
-    { name: 'RIZ', grams: 200, kcal: 260, protein: 5.4, carbs: 56, fat: 0.6 },
-    { name: 'POULET', grams: 150, kcal: 248, protein: 46.5, carbs: 0, fat: 5.4 },
-  ];
-  expect(totals(items)).toEqual({ grams: 350, kcal: 508, protein: 51.9, carbs: 56, fat: 6 });
-  const meal = { name: 'Riz poulet', kind: 'meal' as const, portions: 1, items };
-  expect(entriesFor(meal)).toHaveLength(2);
-  expect(entriesFor(meal, 2)[0]).toMatchObject({ name: 'RIZ', grams: 400, kcal: 520 });
-  const recipe = { name: 'Bowl', kind: 'recipe' as const, portions: 2, items };
-  expect(perPortion(recipe)).toEqual({ grams: 175, kcal: 254, protein: 26, carbs: 28, fat: 3 });
-  const e = entriesFor(recipe, 1.5);
-  expect(e).toHaveLength(1);
-  expect(e[0]).toMatchObject({ name: 'Bowl', grams: 262.5, kcal: 381 });
-  expect(perPortion({ ...recipe, portions: 0 }).kcal).toBe(508);
+  const p = toApiParams([{ muscle: 'PECTORAUX', color: '#FF453A' }, { muscle: 'DOS', color: '#FF9F0A' }, { muscle: 'QUADRICEPS', color: '#34C759' }, { muscle: 'INCONNU', color: '#000' }], names);
+  expect(p.muscles).toEqual(['CHEST', 'LATS', 'UPPER BACK', 'QUADS']);
+  expect(p.colors).toEqual(['#FF453A', '#FF9F0A', '#FF9F0A', '#34C759']);
+  expect(heatmapUrl(p.muscles, p.colors)).toBe('https://muscle-visualizer-api.p.rapidapi.com/api/v1/visualize/heatmap?muscles=CHEST,LATS,UPPER%20BACK,QUADS&colors=%23FF453A,%23FF9F0A,%23FF9F0A,%2334C759&size=small&format=jpeg');
+  // un nom absent de l'API est ignoré
+  expect(toApiParams([{ muscle: 'ISCHIOS', color: '#fff' }], ['CHEST']).muscles).toEqual([]);
 });

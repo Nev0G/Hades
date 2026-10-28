@@ -31,11 +31,7 @@ export default function DayEditor() {
       {data && data.rows.length > 0 && (
         <Card>
           <T size={14} dim>Muscles ciblés</T>
-          <MuscleMap
-            width={110}
-            colors={Object.fromEntries([...new Set(data.rows.map((r) => r.muscle))].map((m) => [m, C.blue]))}
-            api={{ muscles: [...new Set(data.rows.map((r) => r.muscle))], color: '#2F7BF6' }}
-          />
+          <MuscleMap width={260} items={[...new Set(data.rows.map((r) => r.muscle))].map((m) => ({ muscle: m, color: C.blue }))} />
           <T size={12} dim>{[...new Set(data.rows.map((r) => r.muscle))].join(' · ')}</T>
         </Card>
       )}

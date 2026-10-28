@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import Svg, { Rect } from 'react-native-svg';
 import { Card, Screen, T } from '../../components/ui';
 import { RankBadge } from '../../components/RankBadge';
-import { BodyRanks } from '../../components/BodyRanks';
 import { MuscleMap } from '../../components/MuscleMap';
 import { Ring } from '../../components/Gauge';
 import { WireChart } from '../../components/WireChart';
@@ -46,9 +45,6 @@ export default function Dashboard() {
   const next = sortRoutines(d.routines.filter((r) => r.exercises > 0), 'recent')
     .map((r) => ({ r, ready: readiness(r.muscles, d.rec) })).sort((a, b) => b.ready - a.ready)[0];
   const recSorted = [...d.rec].sort((a, b) => a.pct - b.pct);
-  const fatigued = d.rec.filter((r) => r.state === 'fatigue' || r.state === 'recovering');
-  const recColors: Record<string, string> = {};
-  for (const r of d.rec) recColors[r.muscle] = r.state === 'rested' && !r.lastTrained ? '#3A3A3C' : STATE_COLOR[r.state];
   const maxVol = Math.max(1, ...d.vol.map((v) => v.volume));
   const cw = width - 64;
   const rows: [string, (p: Perf) => number, (n: number) => string][] = [
@@ -119,7 +115,7 @@ export default function Dashboard() {
 
       <Card>
         <T size={18}>Récupération musculaire</T>
-        <MuscleMap width={110} colors={recColors} api={{ muscles: fatigued.map((r) => r.muscle), color: '#FF453A' }} />
+        <MuscleMap width={Math.min(300, width - 64)} items={d.rec.filter((r) => r.lastTrained).map((r) => ({ muscle: r.muscle, color: STATE_COLOR[r.state] }))} />
         <View style={{ flexDirection: 'row', gap: 12, justifyContent: 'center' }}>
           {(['fatigue', 'recovering', 'ready'] as const).map((s) => (
             <View key={s} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
@@ -188,7 +184,7 @@ export default function Dashboard() {
             </View>
           </View>
         </View>
-        <BodyRanks muscles={d.ranks.muscles} width={110} />
+        <MuscleMap width={Math.min(300, width - 64)} items={d.ranks.muscles.filter((m) => m.tier).map((m) => ({ muscle: m.muscle, color: TIER_COLOR[m.tier!] }))} />
         {top.map((e) => (
           <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <RankBadge tier={e.rank.tier} size={30} />
