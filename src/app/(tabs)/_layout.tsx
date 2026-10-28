@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { C, SANS } from '../../lib/theme';
+import { C } from '../../lib/theme';
 
 export default function TabsLayout() {
   return (
@@ -11,7 +11,7 @@ export default function TabsLayout() {
         tabBarStyle: { backgroundColor: C.bg, borderTopWidth: 0, height: 66, boxShadow: `0px -6px 14px ${C.lo}` },
         tabBarActiveTintColor: C.gold,
         tabBarInactiveTintColor: C.dim,
-        tabBarLabelStyle: { fontFamily: SANS, fontSize: 12, letterSpacing: 1 },
+        tabBarLabelStyle: { fontWeight: '700', fontSize: 12, letterSpacing: 1 },
         tabBarIconStyle: { display: 'none' },
         tabBarLabelPosition: 'beside-icon',
       }}

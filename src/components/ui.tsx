@@ -6,7 +6,7 @@ import { C, SANS, SANS_REG, MONO, inset, raised } from '../lib/theme';
 
 export function T({ children, style, size = 14, color = C.text, dim, onPress }: { children: React.ReactNode; style?: TextStyle; size?: number; color?: string; dim?: boolean; onPress?: () => void }) {
   return (
-    <Text onPress={onPress} style={[{ fontFamily: size >= 28 ? MONO : SANS, fontSize: size, color: dim ? C.dim : color, textTransform: 'uppercase', letterSpacing: size <= 14 ? 0.8 : 0 }, style]}>{children}</Text>
+    <Text onPress={onPress} style={[{ fontFamily: size >= 28 ? MONO : SANS, fontWeight: size >= 28 ? undefined : '700', fontSize: size, color: dim ? C.dim : color, textTransform: 'uppercase', letterSpacing: size <= 14 ? 0.8 : 0 }, style]}>{children}</Text>
   );
 }
 

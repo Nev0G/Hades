@@ -17,8 +17,9 @@ export const C = {
 };
 export const MONO = 'JetBrainsMono_800ExtraBold';
 export const MONO_REG = 'JetBrainsMono_500Medium';
-export const SANS = 'Inter_700Bold';
-export const SANS_REG = 'Inter_500Medium';
+// Police système (aucune dépendance de police supplémentaire) pour les textes courants.
+export const SANS = undefined;
+export const SANS_REG = undefined;
 export const B = 0;
 export const GLASSES_ML = 250;
 
