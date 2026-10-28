@@ -4,14 +4,14 @@ import { StatusBar } from 'expo-status-bar';
 import { Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, JetBrainsMono_800ExtraBold, JetBrainsMono_500Medium } from '@expo-google-fonts/jetbrains-mono';
-import * as Notifications from 'expo-notifications';
+import { getNotifications } from '../lib/notif';
 import { getDb } from '../lib/db';
 import { getSession } from '../lib/auth';
 import { getProfile } from '../lib/repo';
 import { startSyncLoop } from '../lib/sync';
 import { C } from '../lib/theme';
 
-Notifications.setNotificationHandler({
+getNotifications()?.setNotificationHandler({
   handleNotification: async () => ({ shouldShowBanner: true, shouldShowList: true, shouldPlaySound: true, shouldSetBadge: false }),
 });
 

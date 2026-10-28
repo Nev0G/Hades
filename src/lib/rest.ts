@@ -1,11 +1,12 @@
-import * as Notifications from 'expo-notifications';
+import { getNotifications } from './notif';
 import { Platform } from 'react-native';
 
 const CATEGORY = 'rest';
 let notifId: string | null = null;
 
 export async function initRestNotifications() {
-  if (Platform.OS === 'web') return;
+  const Notifications = getNotifications();
+  if (!Notifications) return;
   await Notifications.requestPermissionsAsync().catch(() => {});
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('rest', { name: 'REPOS', importance: Notifications.AndroidImportance.HIGH, vibrationPattern: [0, 400, 200, 400] }).catch(() => {});
@@ -20,7 +21,8 @@ export async function initRestNotifications() {
 export async function scheduleRestEnd(seconds: number, label: string) {
   await cancelRestEnd();
   startRestActivity(seconds, label);
-  if (Platform.OS === 'web') return;
+  const Notifications = getNotifications();
+  if (!Notifications) return;
   try {
     notifId = await Notifications.scheduleNotificationAsync({
       content: { title: 'REPOS TERMINE', body: label, categoryIdentifier: CATEGORY, sound: true },
@@ -31,7 +33,8 @@ export async function scheduleRestEnd(seconds: number, label: string) {
 
 export async function cancelRestEnd() {
   stopRestActivity();
-  if (notifId) await Notifications.cancelScheduledNotificationAsync(notifId).catch(() => {});
+  const Notifications = getNotifications();
+  if (notifId && Notifications) await Notifications.cancelScheduledNotificationAsync(notifId).catch(() => {});
   notifId = null;
 }
 
