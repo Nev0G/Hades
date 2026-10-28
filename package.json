@@ -39,7 +39,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "jest",
+    "test": "NODE_OPTIONS=--experimental-sqlite jest",
     "typecheck": "tsc --noEmit"
   },
   "private": true
